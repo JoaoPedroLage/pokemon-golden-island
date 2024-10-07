@@ -212,70 +212,67 @@ const Home: React.FC = () => {
 
     // Função para carregar as imagens do jogador
     const playerImagesLoad = () => {
-      updateCanvasSize(); // Configura o tamanho inicial do canvas e do player
-
       const image = new Image();
       image.src = '/images/pokemonTilesetMap.png';
-      imageRef.current = image; // Armazena a imagem na ref
-
-      // Carregamento das imagens do jogador
-      const playerDownImage = new Image();
-      playerDownImage.src = '/images/playerDown.png';
-
-      const playerUpImage = new Image();
-      playerUpImage.src = '/images/playerUp.png';
-
-      const playerLeftImage = new Image();
-      playerLeftImage.src = '/images/playerLeft.png';
-
-      const playerRightImage = new Image();
-      playerRightImage.src = '/images/playerRight.png';
-
-      const imagesLoaded = Promise.all([
-        new Promise((resolve) => { image.onload = resolve; }),
-        new Promise((resolve) => { playerDownImage.onload = resolve; }),
-        new Promise((resolve) => { playerUpImage.onload = resolve; }),
-        new Promise((resolve) => { playerLeftImage.onload = resolve; }),
-        new Promise((resolve) => { playerRightImage.onload = resolve; }),
-      ]);
-
-      imagesLoaded.then(() => {
-        // Calcule o tamanho do jogador baseado nas dimensões atuais do canvas
-        const playerSize = Math.min(canvas.width, canvas.height) / 10; // Tamanho do jogador baseado no canvas
-
-        // Definir a posição do jogador condicionalmente
-        const playerPosition = wasInBattle && initialPlayerPosition
-          ? initialPlayerPosition // Usa a posição inicial se o jogador estava em batalha
-          : {
-            x: (canvas.width - playerSize) / 2, // Centraliza o jogador na largura do canvas
-            y: (canvas.height - playerSize) / 2, // Centraliza o jogador na altura do canvas
-          };
-
-        // Cria o jogador centralizado no canvas ou retorna à posição inicial
-        const player = new Sprite({
-          position: playerPosition, // Passa a posição calculada
-          image: playerDownImage, // Começa com a imagem para baixo
-          frames: { max: 2 },
-          sprites: {
-            up: playerUpImage,
-            left: playerLeftImage,
-            right: playerRightImage,
-            down: playerDownImage,
-          },
-          size: playerSize, // Passa o tamanho do jogador
-          inBattle: false,
+      
+      // Ouvindo o evento de carregamento da imagem antes de continuar
+      image.onload = () => {
+        imageRef.current = image; // Armazena a imagem na ref
+    
+        const playerDownImage = new Image();
+        playerDownImage.src = '/images/playerDown.png';
+    
+        const playerUpImage = new Image();
+        playerUpImage.src = '/images/playerUp.png';
+    
+        const playerLeftImage = new Image();
+        playerLeftImage.src = '/images/playerLeft.png';
+    
+        const playerRightImage = new Image();
+        playerRightImage.src = '/images/playerRight.png';
+    
+        // Espera todas as imagens carregarem
+        Promise.all([
+          new Promise((resolve) => { playerDownImage.onload = resolve; }),
+          new Promise((resolve) => { playerUpImage.onload = resolve; }),
+          new Promise((resolve) => { playerLeftImage.onload = resolve; }),
+          new Promise((resolve) => { playerRightImage.onload = resolve; }),
+        ]).then(() => {
+          // Calcule o tamanho do jogador baseado nas dimensões atuais do canvas
+          const playerSize = Math.min(canvas.width, canvas.height) / 10; // Tamanho do jogador baseado no canvas
+    
+          const playerPosition = wasInBattle && initialPlayerPosition
+            ? initialPlayerPosition // Usa a posição inicial se o jogador estava em batalha
+            : {
+              x: (canvas.width - playerSize) / 2, // Centraliza o jogador na largura do canvas
+              y: (canvas.height - playerSize) / 2, // Centraliza o jogador na altura do canvas
+            };
+    
+          // Cria o jogador centralizado no canvas ou retorna à posição inicial
+          const player = new Sprite({
+            position: playerPosition, // Passa a posição calculada
+            image: playerDownImage, // Começa com a imagem para baixo
+            frames: { max: 2 },
+            sprites: {
+              up: playerUpImage,
+              left: playerLeftImage,
+              right: playerRightImage,
+              down: playerDownImage,
+            },
+            size: playerSize, // Passa o tamanho do jogador
+            inBattle: false,
+          });
+    
+          playerRef.current = player; // Salva o jogador no ref para poder manipulá-lo mais tarde
+    
+          updateCanvasSize(); // Atualiza o tamanho do canvas e do jogador
+    
+          // Chama a função de animação para começar
+          startAnimation(c);
         });
-
-
-        playerRef.current = player; // Salva o jogador no ref para poder manipulá-lo mais tarde
-
-        updateCanvasSize(); // Atualiza o tamanho do canvas e do jogador
-
-        // Chama a função de animação para começar
-        startAnimation(c);
-      });
+      };
     };
-
+    
     playerImagesLoad(); // Carrega as imagens do jogador
 
     const handleKeyUp = (e: KeyboardEvent) => {
