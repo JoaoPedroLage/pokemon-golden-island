@@ -213,24 +213,25 @@ const Home: React.FC = () => {
     // Função para carregar as imagens do jogador
     const playerImagesLoad = () => {
       const image = new Image();
-      image.src = '/Images/pokemonTilesetMap.png';
-      
+
+      image.src = 'https://storage.cloud.google.com/pokemon-golden-island/pokemonTileSetMap.png';
+
       // Ouvindo o evento de carregamento da imagem antes de continuar
       image.onload = () => {
         imageRef.current = image; // Armazena a imagem na ref
-    
+
         const playerDownImage = new Image();
-        playerDownImage.src = '/Images/playerDown.png';
-    
+        playerDownImage.src = 'https://storage.cloud.google.com/pokemon-golden-island/playerDown.png';
+
         const playerUpImage = new Image();
-        playerUpImage.src = '/Images/playerUp.png';
-    
+        playerUpImage.src = 'https://storage.cloud.google.com/pokemon-golden-island/playerUp.png';
+
         const playerLeftImage = new Image();
-        playerLeftImage.src = '/Images/playerLeft.png';
-    
+        playerLeftImage.src = 'https://storage.cloud.google.com/pokemon-golden-island/playerLeft.png';
+
         const playerRightImage = new Image();
-        playerRightImage.src = '/Images/playerRight.png';
-    
+        playerRightImage.src = 'https://storage.cloud.google.com/pokemon-golden-island/playerRight.png';
+
         // Espera todas as imagens carregarem
         Promise.all([
           new Promise((resolve) => { playerDownImage.onload = resolve; }),
@@ -240,14 +241,14 @@ const Home: React.FC = () => {
         ]).then(() => {
           // Calcule o tamanho do jogador baseado nas dimensões atuais do canvas
           const playerSize = Math.min(canvas.width, canvas.height) / 10; // Tamanho do jogador baseado no canvas
-    
+
           const playerPosition = wasInBattle && initialPlayerPosition
             ? initialPlayerPosition // Usa a posição inicial se o jogador estava em batalha
             : {
               x: (canvas.width - playerSize) / 2, // Centraliza o jogador na largura do canvas
               y: (canvas.height - playerSize) / 2, // Centraliza o jogador na altura do canvas
             };
-    
+
           // Cria o jogador centralizado no canvas ou retorna à posição inicial
           const player = new Sprite({
             position: playerPosition, // Passa a posição calculada
@@ -262,17 +263,17 @@ const Home: React.FC = () => {
             size: playerSize, // Passa o tamanho do jogador
             inBattle: false,
           });
-    
+
           playerRef.current = player; // Salva o jogador no ref para poder manipulá-lo mais tarde
-    
+
           updateCanvasSize(); // Atualiza o tamanho do canvas e do jogador
-    
+
           // Chama a função de animação para começar
           startAnimation(c);
         });
       };
     };
-    
+
     playerImagesLoad(); // Carrega as imagens do jogador
 
     const handleKeyUp = (e: KeyboardEvent) => {
@@ -323,8 +324,6 @@ const Home: React.FC = () => {
     // Adiciona os event listeners para tecla solta
     window.addEventListener('keydown', handleKeyDown);
 
-    console.log()
-
     return () => {
       window.addEventListener('keydown', handleKeyPress);
       window.removeEventListener('keyup', handleKeyUp);
@@ -355,13 +354,20 @@ const Home: React.FC = () => {
               // Renderiza a cena de batalha se o estado inBattle for verdadeiro
               <BattleScene endBattle={() => endBattle()} />
             ) : (
-              <canvas
-                ref={canvasRef}
-                style={{
-                  width: '80%',
-                  height: '80%',
-                }}
-              />
+              <>
+                <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center">
+                  <div className="text-white">Loading...</div>
+                </div>
+                <canvas
+                  ref={canvasRef}
+                  style={{
+                    width: '80%',
+                    height: '80%',
+                  }}
+                  className="absolute w-full h-full bg-black bg-opacity-50 flex justify-center items-center"
+                >
+                </canvas>
+              </>
             )}
 
           {/* Mensagem para pressionar Enter */}
