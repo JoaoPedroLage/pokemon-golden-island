@@ -26,7 +26,6 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle }) => {
     useBerry
   } = useGameContext();
 
-
   const getCatchChance = (berry= 0) => {
     if (!pokemon) return 0.5 + berry;
 
