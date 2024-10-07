@@ -1,13 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useEffect, useRef } from 'react';
-import { Sprite } from './interfaces';
+import React, { useEffect, useRef, useState } from 'react';
+import { Sprite, BattleZone, Boundary } from './utils/classes';
+import { battleZonesData, collisions } from './data';
+import BattleScene from './components/BattleScene';
+import { Key } from './interfaces/mainInterface';
+import { GameProvider } from './context/GameContext';
+import Pokedex from './components/Pokedex';
 
 const Home: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const playerRef = useRef<Sprite | null>(null);
-  const movables = useRef<any[]>([]); // Os itens móveis serão atualizados com sprites e outros elementos.
   const animationIdRef = useRef<number | null>(null); // Armazena o ID da animação
   const imageRef = useRef<HTMLImageElement | null>(null); // Ref para a imagem de fundo
 
@@ -22,14 +26,89 @@ const Home: React.FC = () => {
     ArrowRight: { pressed: false },
   });
 
+  const [inBattle, setInBattle] = useState(false); // Novo estado para controlar se estamos em batalha
+  const [wasInBattle, setWasInBattle] = useState(false); // Novo estado para controlar se o jogador estava em batalha
+  const [initialPlayerPosition, setInitialPlayerPosition] = useState<{ x: number; y: number } | null>(null); // Estado para salvar a posição inicial do jogador
+  const [showPokedex, setShowPokedex] = React.useState(false); // Estado para controlar a exibição da Pokedex
+
   // Função para iniciar a animação
   const startAnimation = (c: CanvasRenderingContext2D) => {
+    const boundaries: Boundary[] = [];
+    const battleZones: BattleZone[] = [];
+    const cols = 70; // Número de colunas do seu mapa
+    const rows = 40; // Número de linhas do seu mapa
+
+    // console.log(inBattle);
+
+    if (!imageRef.current) return; // Verifica se a imagem está carregada
+
+    c.clearRect(0, 0, canvasRef.current!.width, canvasRef.current!.height);
+
+    const image = imageRef.current;
+
+    const imageAspectRatio = image.width / image.height;
+    const canvasAspectRatio = canvasRef.current!.width / canvasRef.current!.height;
+
+    let canvasWidth, canvasHeight;
+
+    if (imageAspectRatio > canvasAspectRatio) {
+      canvasWidth = canvasRef.current!.width;
+      canvasHeight = canvasRef.current!.width / imageAspectRatio;
+    } else {
+      canvasHeight = canvasRef.current!.height;
+      canvasWidth = canvasRef.current!.height * imageAspectRatio;
+    }
+
+    // Cálculo do offset
+    const offsetX = (canvasRef.current!.width - canvasWidth) / 2;
+    const offsetY = (canvasRef.current!.height - canvasHeight) / 2;
+
+    // Calcule a largura e altura de cada célula
+    const cellWidth = canvasWidth / cols;
+    const cellHeight = canvasHeight / rows;
+
+    // Criar zonas de batalha levando em consideração o offset
+    battleZonesData.forEach((symbol: number, index: number) => {
+      if (symbol === 1) {
+        const j = index % cols;
+        const i = Math.floor(index / cols);
+        battleZones.push(
+          new BattleZone({
+            width: cellWidth,
+            height: cellHeight,
+            position: {
+              x: j * cellWidth + offsetX, // Ajuste com o offset
+              y: i * cellHeight + offsetY, // Ajuste com o offset
+            },
+          })
+        );
+      }
+    });
+
+    // Criar áreas de colisão levando em consideração o offset
+    collisions.forEach((symbol: number, index: number) => {
+      if (symbol === 1) {
+        const j = index % cols;
+        const i = Math.floor(index / cols);
+        boundaries.push(
+          new Boundary({
+            width: cellWidth,
+            height: cellHeight,
+            position: {
+              x: j * cellWidth + offsetX, // Ajuste com o offset
+              y: i * cellHeight + offsetY, // Ajuste com o offset
+            },
+          })
+        );
+      }
+    });
+
     const animate = () => {
-      if (!imageRef.current) return; // Verifica se a imagem está carregada
+      if (!imageRef.current) return;
 
       c.clearRect(0, 0, canvasRef.current!.width, canvasRef.current!.height);
 
-      const image = imageRef.current; // Acessa a imagem aqui
+      const image = imageRef.current;
 
       const imageAspectRatio = image.width / image.height;
       const canvasAspectRatio = canvasRef.current!.width / canvasRef.current!.height;
@@ -47,23 +126,46 @@ const Home: React.FC = () => {
       const offsetX = (canvasRef.current!.width - renderWidth) / 2;
       const offsetY = (canvasRef.current!.height - renderHeight) / 2;
 
+      // Desenha a imagem no centro do canvas
       c.drawImage(image, offsetX, offsetY, renderWidth, renderHeight);
+
+      // // Desenhar as áreas de colisão
+      // boundaries.forEach(boundary => {
+      //   boundary.draw(c); // As boundaries são desenhadas nas posições ajustadas
+      // });
+
+      // // Desenhar as áreas de batalha
+      // battleZones.forEach(battleZone => {
+      //   battleZone.draw(c); // As battleZones são desenhadas nas posições ajustadas
+      // });
+
+      // Atualizar e desenhar o jogador
+      playerRef.current?.update(c, keysRef.current, boundaries, battleZones);
 
       // Desenhar o jogador
       playerRef.current?.draw(c);
-      // Atualizar e desenhar o jogador
-      playerRef.current?.update(c, keysRef.current);
 
-      // Continuar a animação se alguma tecla estiver pressionada
+      // Continuar a animação
       if (Object.values(keysRef.current).some(key => key.pressed)) {
         animationIdRef.current = requestAnimationFrame(animate);
       } else {
         cancelAnimationFrame(animationIdRef.current!);
-        animationIdRef.current = null; // Limpar o ID da animação
+        animationIdRef.current = null;
       }
     };
 
     animate(); // Iniciar animação
+  };
+
+  // Lógica de saída da batalha
+  const endBattle = () => {
+    setInBattle(false);
+
+    setWasInBattle(true);
+
+    Object.keys(keysRef.current).forEach((key) => {
+      keysRef.current[key as Key] = { pressed: false };
+    }); // Reseta todas as teclas
   };
 
   useEffect(() => {
@@ -73,9 +175,44 @@ const Home: React.FC = () => {
     const c = canvas.getContext('2d');
     if (!c) return;
 
-    const resizeCanvas = () => {
+    const updateCanvasSize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+
+      if (!imageRef.current) return; // Verifica se a imagem está carregada
+
+      const image = imageRef.current;
+
+      const imageAspectRatio = image.width / image.height;
+      const canvasAspectRatio = canvasRef.current!.width / canvasRef.current!.height;
+
+      let renderWidth, renderHeight;
+
+      if (imageAspectRatio > canvasAspectRatio) {
+        renderWidth = canvasRef.current!.width;
+        renderHeight = canvasRef.current!.width / imageAspectRatio;
+      } else {
+        renderHeight = canvasRef.current!.height;
+        renderWidth = canvasRef.current!.height * imageAspectRatio;
+      }
+
+      const playerNeWSize = Math.min(renderWidth, renderHeight) / 10; // Tamanho do jogador baseado na tela
+
+      // Atualiza o tamanho e a posição do jogador
+      if (playerRef.current) {
+        playerRef.current.resize(playerNeWSize, canvas.width, canvas.height, wasInBattle, setWasInBattle); // Atualiza o tamanho do jogador
+      }
+
+      // Redesenha o canvas
+      if (imageRef.current) {
+        c.clearRect(0, 0, canvas.width, canvas.height); // Limpa o canvas
+        startAnimation(c); // Reinicia a animação com as novas proporções
+      }
+    };
+
+    // Função para carregar as imagens do jogador
+    const playerImagesLoad = () => {
+      updateCanvasSize(); // Configura o tamanho inicial do canvas e do player
 
       const image = new Image();
       image.src = '/images/pokemonTilesetMap.png';
@@ -103,13 +240,20 @@ const Home: React.FC = () => {
       ]);
 
       imagesLoaded.then(() => {
-        // Criação do jogador
-        const playerSize = Math.min(canvas.width, canvas.height) / 10; // Ajuste o divisor para mudar o tamanho do jogador
+        // Calcule o tamanho do jogador baseado nas dimensões atuais do canvas
+        const playerSize = Math.min(canvas.width, canvas.height) / 10; // Tamanho do jogador baseado no canvas
+
+        // Definir a posição do jogador condicionalmente
+        const playerPosition = wasInBattle && initialPlayerPosition
+          ? initialPlayerPosition // Usa a posição inicial se o jogador estava em batalha
+          : {
+            x: (canvas.width - playerSize) / 2, // Centraliza o jogador na largura do canvas
+            y: (canvas.height - playerSize) / 2, // Centraliza o jogador na altura do canvas
+          };
+
+        // Cria o jogador centralizado no canvas ou retorna à posição inicial
         const player = new Sprite({
-          position: {
-            x: canvas.width / 2 - playerSize / 2, // Centralizar
-            y: canvas.height / 2 - playerSize / 2, // Centralizar
-          },
+          position: playerPosition, // Passa a posição calculada
           image: playerDownImage, // Começa com a imagem para baixo
           frames: { max: 2 },
           sprites: {
@@ -118,95 +262,128 @@ const Home: React.FC = () => {
             right: playerRightImage,
             down: playerDownImage,
           },
-          size: playerSize // Passa o tamanho do jogador
+          size: playerSize, // Passa o tamanho do jogador
+          inBattle: false,
         });
-        playerRef.current = player;
 
-        const background = {
-          position: {
-            x: 0,
-            y: 0,
-          },
-          image,
-        };
 
-        movables.current = [background];
+        playerRef.current = player; // Salva o jogador no ref para poder manipulá-lo mais tarde
 
-        // Iniciar a animação após carregar as imagens
+        updateCanvasSize(); // Atualiza o tamanho do canvas e do jogador
+
+        // Chama a função de animação para começar
         startAnimation(c);
       });
     };
 
-    resizeCanvas();
-
-    window.addEventListener('resize', resizeCanvas);
+    playerImagesLoad(); // Carrega as imagens do jogador
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      type Key = 'w' | 'a' | 's' | 'd' | 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight';
-    
       if (keysRef.current[e.key as Key]) {
         e.preventDefault();
-        // Salvar a posição do jogador quando a tecla for liberada
         keysRef.current[e.key as Key] = { pressed: false };
-    
-        // Garantir que o frame do player volte ao frame estático (0)
-        if (playerRef.current) {
+
+        if (playerRef.current && !playerRef.current.inBattle) {
           playerRef.current.frameCurrent = 0; // Retorna o frame para 0
         }
       }
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      type Key = 'w' | 'a' | 's' | 'd' | 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight';
-
       if (keysRef.current[e.key as Key]) {
         e.preventDefault();
         keysRef.current[e.key as Key] = { pressed: true };
 
-        // Iniciar a animação se não estiver já em execução
         if (!animationIdRef.current) {
           startAnimation(c); // Iniciar a animação com a imagem correta
+        }
+        if (playerRef.current!.inBattle) {
+          setInBattle(true);
+        }
+        if (playerRef.current!.inBattle) {
+          // Se o jogador estiver em batalha, salve a posição inicial
+          setInitialPlayerPosition({
+            x: playerRef.current!.position.x,
+            y: playerRef.current!.position.y,
+          });
         }
       }
     };
 
+    // Função para lidar com a pressão da tecla
+    const handleKeyPress = (event: KeyboardEvent) => {
+      if (event.key === 'Enter') {
+        setShowPokedex(!showPokedex); // Muda o estado para exibir a Pokédex
+      }
+    };
+
+    // Adiciona os event listeners para redimensionamento da janela
+    window.addEventListener('keydown', handleKeyPress);
+    // Adiciona o event listener para redimensionamento da janela
+    window.addEventListener('resize', updateCanvasSize);
+    // Adiciona os event listeners para tecla pressionada
     window.addEventListener('keyup', handleKeyUp);
+    // Adiciona os event listeners para tecla solta
     window.addEventListener('keydown', handleKeyDown);
 
+    console.log()
+
     return () => {
+      window.addEventListener('keydown', handleKeyPress);
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('resize', resizeCanvas);
-
+      window.removeEventListener('resize', updateCanvasSize);
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current);
       }
     };
-  }, []);
+  }, [inBattle, initialPlayerPosition, showPokedex, wasInBattle]);
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: '100vw',
-        height: '100vh',
-        overflow: 'hidden', // Impede o scroll
-        backgroundColor: '#333', // Cor de fundo fora do canvas
-      }}
-    >
-      <canvas
-        ref={canvasRef}
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          width: '80%',
-          height: '80%',
-        }}
-      />
-    </div>
+    <>
+      <GameProvider>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: '#333', // Cor de fundo fora do canvas
+          }}
+        >
+
+          {
+            inBattle ? (
+              // Renderiza a cena de batalha se o estado inBattle for verdadeiro
+              <BattleScene endBattle={() => endBattle()} />
+            ) : (
+              <canvas
+                ref={canvasRef}
+                style={{
+                  width: '80%',
+                  height: '80%',
+                }}
+              />
+            )}
+
+          {/* Mensagem para pressionar Enter */}
+          {!showPokedex && !inBattle && (
+            <div
+              className="absolute bottom-10 text-center w-full"
+              style={{
+                color: 'rgba(255, 255, 255, 0.5)', // Cor branca opaca
+                fontSize: '1.25rem', // Tamanho do texto
+              }}
+            >
+              Pressione <span className="font-bold">Enter</span> para abrir a Pokédex
+            </div>
+          )}
+
+          {showPokedex && <Pokedex />}
+        </div>
+      </GameProvider>
+    </>
   );
 };
 
