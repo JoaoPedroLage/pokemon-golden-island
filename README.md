@@ -2,13 +2,13 @@
 
 ## Descrição do problema
 
-Desenvolva uma aplicação com frontend e backend que permita interação com pokemons. O usuário deve poder encontrar pokemons aleatoriamente, capturá-los, soltá-los e visualizar a lista de pokemons capturados.
+Desenvolver uma aplicação com frontend e backend que permita interação com pokemons. O usuário pode encontrar pokemons aleatoriamente, capturá-los, soltá-los e visualizar a lista de pokemons capturados.
 
 ## Requisitos
 
--   [~] O backend deve ser desenvolvido em [Nestjs](https://github.com/nestjs/nest)
+-   [ ] O backend deve ser desenvolvido em [Nestjs](https://github.com/nestjs/nest)
 -   [x] O frontend deve ser desenvolvido em [Nextjs](https://github.com/vercel/next.js)
--   [~] O banco de dados deve ser o [Postgres](https://www.postgresql.org/)
+-   [ ] O banco de dados deve ser o [Postgres](https://www.postgresql.org/)
 -   [x] Para a busca de pokemons, integre a [PokeAPI](https://pokeapi.co/)
 -   [x] Devem estar disponíveis apenas os pokemons da primeira geração
 -   [x] O projeto deve estar versionado em um repositório no Github
@@ -22,14 +22,9 @@ Desenvolva uma aplicação com frontend e backend que permita interação com po
 -   Testes
 -   UX/UI
 
-## Entrega
+## 
 
--   O prazo para entrega é de 7 dias corridos a partir do recebimento do teste
--   Ao finalizar, compartilhe o repositório com (@lucaslosi)[https://github.com/lucaslosi] no github e um email para pessoal@monocard.com.br com o link do repositório
-
-Boa sorte! 🚀
-
-## Next
+## Frontend - Next
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
@@ -38,6 +33,11 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 First, run the development server:
 
 ```bash
+#
+cd ./frontd/
+# or
+npm install
+# or
 npm run dev
 # or
 yarn dev
@@ -49,24 +49,13 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
 ## Deploy on Vercel
 
 https://pokemon-golden-island-jpolive-dev.vercel.app/
 
-## Nest
+##
+
+## Backend - Nest
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
@@ -101,6 +90,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ## Project setup
 
 ```bash
+$ cd ./backend/
 $ npm install
 ```
 
@@ -120,7 +110,7 @@ $ npm run start:prod
 ## Run tests
 
 ```bash
-# unit tests
+$ unit tests
 $ npm run test
 
 # e2e tests
@@ -130,27 +120,6 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
 
 ## License
 
