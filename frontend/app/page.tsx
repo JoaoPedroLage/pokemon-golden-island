@@ -213,23 +213,23 @@ const Home: React.FC = () => {
     // Função para carregar as imagens do jogador
     const playerImagesLoad = () => {
       const image = new Image();
-      image.src = '/images/pokemonTilesetMap.png';
+      image.src = '/Images/pokemonTilesetMap.png';
       
       // Ouvindo o evento de carregamento da imagem antes de continuar
       image.onload = () => {
         imageRef.current = image; // Armazena a imagem na ref
     
         const playerDownImage = new Image();
-        playerDownImage.src = '/images/playerDown.png';
+        playerDownImage.src = '/Images/playerDown.png';
     
         const playerUpImage = new Image();
-        playerUpImage.src = '/images/playerUp.png';
+        playerUpImage.src = '/Images/playerUp.png';
     
         const playerLeftImage = new Image();
-        playerLeftImage.src = '/images/playerLeft.png';
+        playerLeftImage.src = '/Images/playerLeft.png';
     
         const playerRightImage = new Image();
-        playerRightImage.src = '/images/playerRight.png';
+        playerRightImage.src = '/Images/playerRight.png';
     
         // Espera todas as imagens carregarem
         Promise.all([

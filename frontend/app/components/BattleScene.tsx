@@ -126,7 +126,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle }) => {
     return (
       <div style={{ width: '80vw', height: '80vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#fff' }}>
         <Image
-          src="/images/pokeball.gif"
+          src="/Images/pokeball.gif"
           alt="Loading..."
           width={300}
           height={300}
@@ -164,7 +164,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle }) => {
 
         <div className="absolute bottom-0 left-2">
           <Image
-            src={'/images/playerBackSprite.png'}
+            src={'/Images/playerBackSprite.png'}
             alt={'Player'}
             width={250}
             height={250}
@@ -218,7 +218,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle }) => {
         {isThrowing && (
           <div className="absolute top-[30%] left-[80%]">
             <Image
-              src="/images/catching.gif"
+              src="/Images/catching.gif"
               alt="Catching Pokemon..."
               width={100}
               height={100}
@@ -230,7 +230,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle }) => {
           <div className="absolute top-40 rigth-[2%]">
             <Image
               className='absolute right-[25%] top-[20%]'
-              src="/images/closePokeball.png"
+              src="/Images/closePokeball.png"
               alt="Caught!"
               width={150}
               height={200}
@@ -250,7 +250,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle }) => {
         {catchStatus === 'escape' && (
           <div className="flex flex-col absolute top-40">
             <Image
-              src="/images/openPokeBall.png"
+              src="/Images/openPokeBall.png"
               alt="Escaped!"
               width={200}
               height={200}
