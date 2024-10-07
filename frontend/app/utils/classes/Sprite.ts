@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Key, Position, SpriteProps } from "@/app/interfaces/Sprite";
+import { Key, Position, SpriteProps } from "@/app/interfaces";
+import { Boundary } from "./Boundary";
+import { BattleZone } from "./BattleZone";
 
 export class Sprite {
   position: Position;
@@ -13,6 +15,7 @@ export class Sprite {
   frameCount: number; // Contador para frames
   frameInterval: number; // Tempo entre cada frame
   lastFrameTime: number; // Guarda o tempo da última atualização de frame
+  inBattle: boolean;
 
   constructor({ position, image, frames = { max: 3 }, sprites, size = 50 }: SpriteProps) {
     this.position = position;
@@ -25,6 +28,7 @@ export class Sprite {
     this.frameCount = 0; // Inicializa o contador de frames
     this.frameInterval = 100; // Intervalo de tempo entre frames (milissegundos)
     this.lastFrameTime = 0; // Tempo da última atualização do frame
+    this.inBattle = false; // Inicializa fora da zona de batalha
   }
 
   getSpriteFrame() {
@@ -33,11 +37,9 @@ export class Sprite {
 
     let x, y;
 
-    console.log(this.frameCurrent)
-
     switch (this.frameCurrent) {
       case 0:
-        x = (0 % this.frames.max) * frameWidth; // Calcula a posição x com base no contador de frames
+        x = 0
         y = 0; // Parte superior
         break;
       case 1:
@@ -56,8 +58,33 @@ export class Sprite {
     return { x, y, frameWidth, frameHeight }; // Retorna as informações necessárias
   }
 
+  // Método para atualizar o tamanho e a posição do sprite
+  resize(newSize: number, canvasWidth: number, canvasHeight: number, wasInBattle: boolean, setWasInBattle: (value: boolean) => void) {
+    this.size = newSize; // Atualiza o tamanho do jogador
+
+    if (!wasInBattle) {
+      this.position = {
+        x: canvasWidth / 2 - newSize / 2, // Recentraliza o jogador no canvas
+        y: canvasHeight / 2 - newSize / 2,
+      };
+
+      setWasInBattle(false); // Atualiza o estado de batalha
+    } 
+  }
+
   draw(context: CanvasRenderingContext2D) {
     const { x, y, frameWidth, frameHeight } = this.getSpriteFrame();
+
+    // Aqui estão as dimensões originais do sprite (supondo que você tenha essas informações)
+    const originalWidth = this.image.width / this.frames.max; // Largura de um frame do sprite
+    const originalHeight = this.image.height / this.frames.max;; // Altura total da imagem
+
+    // Cálculo do fator de escala
+    const scale = this.size / 50; // Ajuste a constante (50) se o tamanho original do jogador for diferente
+
+    // Cálculo da nova largura e altura
+    const newWidth = originalWidth * scale;
+    const newHeight = originalHeight * scale;
 
     // Desenha a parte correta do sprite baseada na direção atual
     context.drawImage(
@@ -68,34 +95,82 @@ export class Sprite {
       frameHeight,
       this.position.x,
       this.position.y,
-      frameWidth * 2,
-      frameHeight * 2
+      newWidth,
+      newHeight
     );
   }
 
-  update(context: CanvasRenderingContext2D, keys: any) {
+  update(context: CanvasRenderingContext2D, keys: any, boundaries: Boundary[], battleZones: BattleZone[]) {
     let isMoving = false; // Variável para verificar se o personagem está em movimento
 
-    // Lógica de movimento
+    // Armazena a posição anterior antes de mover
+    const previousPosition = {
+      x: this.position.x,
+      y: this.position.y
+    };
+
+    const movementSpeed = this.size / 50; // Ajusta a velocidade com base no tamanho do jogador e do canvas
+
+    // Lógica de movimentação	do jogador
     if (keys.w.pressed || keys.ArrowUp.pressed) {
-      this.position.y -= this.size / 50; // Move o jogador para cima
+      this.position.y -= movementSpeed; // Move o jogador para cima
       isMoving = true;
-      this.image = this.sprites!.up; // Atualiza a imagem para o sprite "up"
+      this.image = this.sprites!.up;
     }
     if (keys.a.pressed || keys.ArrowLeft.pressed) {
-      this.position.x -= this.size / 50; // Move o jogador para a esquerda
+      this.position.x -= movementSpeed; // Move o jogador para a esquerda
       isMoving = true;
-      this.image = this.sprites!.left; // Atualiza a imagem para o sprite "left"
+      this.image = this.sprites!.left;
     }
     if (keys.s.pressed || keys.ArrowDown.pressed) {
-      this.position.y += this.size / 50; // Move o jogador para baixo
+      this.position.y += movementSpeed; // Move o jogador para baixo
       isMoving = true;
-      this.image = this.sprites!.down; // Atualiza a imagem para o sprite "down"
+      this.image = this.sprites!.down;
     }
     if (keys.d.pressed || keys.ArrowRight.pressed) {
-      this.position.x += this.size / 50; // Move o jogador para a direita
+      this.position.x += movementSpeed; // Move o jogador para a direita
       isMoving = true;
-      this.image = this.sprites!.right; // Atualiza a imagem para o sprite "right"
+      this.image = this.sprites!.right;
+    }
+
+
+    // Representa o jogador como um objeto com posição e dimensões para a verificação de colisão
+    const { frameWidth, frameHeight } = this.getSpriteFrame();
+
+    const playerRect = {
+      position: {
+        x: this.position.x,
+        y: this.position.y
+      },
+      width: frameWidth,
+      height: frameHeight,
+    };
+
+    // Verifica se houve colisão com alguma boundary
+    const isColliding = boundaries.some(boundary =>
+      Boundary.checkCollision(playerRect as Boundary, boundary)
+    );
+
+    if (isColliding) {
+      // Reverte a posição se houve colisão
+      this.position.x = previousPosition.x;
+      this.position.y = previousPosition.y;
+      console.log("Colisão detectada!");
+    }
+
+    // Verifica se o jogador está na zona de batalha
+    const inBattleZone = battleZones.some(zone =>
+      BattleZone.checkBattleZone(playerRect as BattleZone, zone)
+    );
+
+    // Se está na zona de batalha, sorteia uma chance de iniciar a batalha
+    if (inBattleZone && isMoving) {
+      const chanceToStartBattle = Math.floor(Math.random() * 101);
+      if (chanceToStartBattle > 99) { // 2% de chance de iniciar a batalha
+        BattleZone.startBattle(() => {
+          this.inBattle = true; // Atualiza o estado do jogador para dentro da batalha
+        });
+      }
     }
 
     // Lógica para alternar entre os frames de movimento
@@ -106,9 +181,6 @@ export class Sprite {
         this.frameCurrent = (this.frameCount % 3); // Alterna a movimentação entre 0, 1, 2
         this.lastFrameTime = currentTime; // Atualiza o tempo da última atualização
       }
-    } else {
-      // Se nenhuma tecla está pressionada, reseta para o frame estático (frame 0)
-      this.frameCurrent = 0;
     }
 
     // Desenha o sprite
