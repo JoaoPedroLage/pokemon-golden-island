@@ -379,7 +379,7 @@ const Home: React.FC = () => {
                 fontSize: '1.25rem', // Tamanho do texto
               }}
             >
-              Pressione <span className="font-bold">Enter</span> para abrir a Pokédex
+              Press <span className="font-bold">Enter</span> to open the Pokédex
             </div>
           )}
 

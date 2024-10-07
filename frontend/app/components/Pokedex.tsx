@@ -11,9 +11,9 @@ const Pokedex: React.FC = () => {
       <div className="bg-white rounded-lg shadow-lg p-6 md:w-1/2 lg:w-1/3 w-[80vw] h-[75vh] flex flex-col">
         {/* Cabeçalho e informações */}
         <div className="flex-grow overflow-y-auto">
-          <h2 className="text-2xl font-bold mb-4">Pokédex</h2>
+          <h2 className="text-2xl font-bold mb-4">Pokedex</h2>
           <p>Total Pokémons: {totalPokemons}</p>
-          <p>Total Capturados: {totalCaptured}</p>
+          <p>Total Catch Pokémons: {totalCaptured}</p>
 
           {/* Lista de pokémons capturados */}
           <div className="grid grid-cols-4 gap-4 mt-4">
@@ -42,7 +42,7 @@ const Pokedex: React.FC = () => {
 
         {/* Rodapé fixo */}
         <div className="text-center text-sm text-gray-500 mt-6">
-          Pressione <span className="font-bold">Enter</span> para sair
+          Press <span className="font-bold">Enter</span> to exit
         </div>
       </div>
     </div>
