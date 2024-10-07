@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
-import Image from 'next/image';
-import React, { useState, useEffect } from 'react';
+import ImageNext from 'next/image';
+import React, { useState, useEffect, useRef } from 'react';
 import { BattleSceneProps, Pokemon } from '../interfaces/mainInterface';
 import { useGameContext } from '../context/GameContext'; // Importar o contexto
 
@@ -10,9 +12,13 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle }) => {
   const [loading, setLoading] = useState(true);
   const [catchStatus, setCatchStatus] = useState<'none' | 'waiting' | 'catch' | 'escape' | null>(null);
   const [isThrowing, setIsThrowing] = useState(false);
+  const [givingBerry, setGivingBerry] = useState(false);
   const [showPokemon, setShowPokemon] = useState(true);
   const [currentBerryReward, setCurrentBerryReward] = useState<number | null>(null);
   const [currentPokeballReward, setCurrentPokeballReward] = useState<number | null>(null);
+  const [bonusCatchChance, setBonusCatchChance] = useState(0);
+
+  const imageRefs = useRef<{ [key: string]: HTMLImageElement }>({});
 
   const {
     pokeballs,
@@ -26,21 +32,29 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle }) => {
     useBerry
   } = useGameContext();
 
-  const getCatchChance = (berry= 0) => {
-    if (!pokemon) return 0.5 + berry;
+  const getPokemonDifficult = (berry = 0) => {
+    if (!pokemon) return 0;
 
     const rareTypes = ['dragon', 'ghost', 'psychic'];
     const isRare = rareTypes.some((rareType) => pokemon.type.includes(rareType));
 
-    if (isRare) return 0.35 + berry;
-    else if (pokemon.type.includes('mythical')) return 0.2 + berry;
-    else if (pokemon.type.includes('legendary')) return 0.1 + berry;
-    else return 0.6 + berry;
+    if (isRare) return 0.75 - berry;
+    else if (pokemon.type.includes('mythical')) return 0.85 - berry;
+    else if (pokemon.type.includes('legendary')) return 0.95 - berry;
+    else return 0.65 - berry;
   };
 
   const HandleBerryClick = () => {
+    setGivingBerry(true);
     useBerry(); // Decrementa o número de Berries
-    getCatchChance(Math.floor(Math.random() * 30)); // Aumenta a chance de captura em 20%
+
+    const bonusChance = Math.floor (Math.random()) * 0.3; // Bônus de 0 a 30%
+    const newBonusChance = getPokemonDifficult(bonusChance + bonusCatchChance);
+    setBonusCatchChance(newBonusChance);
+
+    setTimeout(() => {
+      setGivingBerry(false);
+    }, 2000);
   };
 
   const HandleEndBattle = () => {
@@ -57,7 +71,8 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle }) => {
 
     setTimeout(() => {
       const catchChance = Math.random();
-      const success = catchChance <= getCatchChance();
+      const success = catchChance >= getPokemonDifficult(bonusCatchChance);
+      console.log(bonusCatchChance, catchChance, getPokemonDifficult(bonusCatchChance))
 
       setIsThrowing(false);
 
@@ -121,15 +136,81 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle }) => {
     }, 2000);
   }, [setTotalPokemons]);
 
+  useEffect(() => {
+    const loadImages = async () => {
+      const imagesToLoad = [
+        {
+          name: 'pokemonSprite',
+          src: pokemon?.sprite,
+        },
+        {
+          name: 'playerBackSprite',
+          src: 'https://storage.googleapis.com/pokemon-golden-island/playerBackSprite.png',
+        },
+        {
+          name: 'catching',
+          src: 'https://storage.googleapis.com/pokemon-golden-island/catching.gif',
+        },
+        {
+          name: 'closePokeball',
+          src: 'https://storage.googleapis.com/pokemon-golden-island/closePokeball.png',
+        },
+        {
+          name: 'berry',
+          src: 'https://storage.googleapis.com/pokemon-golden-island/berry-gif.webp',
+        },
+        {
+          name: 'openPokeBall',
+          src: 'https://storage.googleapis.com/pokemon-golden-island/openPokeBall.png',
+        },
+      ];
+
+      const imagePromises = imagesToLoad.map(async (image: { name: string; src: string | any }) => {
+        const img = new Image();
+
+        try {
+          const response = await fetch(image.src);
+
+          if (!response.ok) {
+            throw new Error(`Failed to fetch image: ${image.src}`);
+          }
+
+          const blob = await response.blob();
+          const blobUrl = URL.createObjectURL(blob); // Cria a URL do blob
+          img.src = blobUrl; // Define o src como a URL do blob
+        } catch (error) {
+          console.log(error);
+          console.warn(`Fetch failed for ${image.src}. Falling back to original src.`);
+          img.src = image.src; // Fallback para o src original
+        }
+
+        return new Promise<void>((resolve) => {
+          img.onload = () => {
+            imageRefs.current[image.name] = img; // Armazena a imagem carregada
+            resolve();
+          };
+          img.onerror = () => {
+            console.error(`Failed to load image: ${image.src}`);
+            resolve(); // Resolve mesmo se falhar para evitar bloqueios
+          };
+        });
+      });
+
+      await Promise.all(imagePromises);
+    };
+
+    loadImages();
+  }, [pokemon?.sprite]); // O array vazio faz com que este efeito execute apenas uma vez, quando o componente é montado
+
   if (loading) {
     return (
       <div style={{ width: '80vw', height: '80vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#fff' }}>
-        <Image
-          src="/Images/pokeball.gif"
+        <ImageNext
+          src="https://storage.googleapis.com/pokemon-golden-island/pokeball.gif"
           alt="Loading..."
           width={300}
           height={300}
-          unoptimized={true}
+          unoptimized
         />
       </div>
     );
@@ -151,22 +232,24 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle }) => {
                 </div>
               </div>
             </div>
-            <Image
+            <ImageNext
               src={pokemon.sprite}
               alt={pokemon.name}
               width={300}
               height={300}
+              unoptimized
               priority
             />
           </div>
         )}
 
         <div className="absolute bottom-0 left-2">
-          <Image
-            src={'/Images/playerBackSprite.png'}
+          <ImageNext
+            src={imageRefs.current['playerBackSprite']?.src}
             alt={'Player'}
             width={250}
             height={250}
+            unoptimized
           />
         </div>
 
@@ -216,23 +299,37 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle }) => {
 
         {isThrowing && (
           <div className="absolute top-[30%] left-[80%]">
-            <Image
-              src="/Images/catching.gif"
+            <ImageNext
+              src={imageRefs.current['catching']?.src}
               alt="Catching Pokemon..."
               width={100}
               height={100}
+              unoptimized
+            />
+          </div>
+        )}
+
+        {givingBerry && (
+          <div className="absolute top-[25%] left-[70%]">
+            <ImageNext
+              src={imageRefs.current['berry']?.src}
+              alt="Giving Berry..."
+              width={100}
+              height={100}
+              unoptimized
             />
           </div>
         )}
 
         {catchStatus === 'catch' && (
           <div className="absolute top-40 rigth-[2%]">
-            <Image
+            <ImageNext
               className='absolute right-[25%] top-[20%]'
-              src="/Images/closePokeball.png"
+              src={imageRefs.current['closePokeball']?.src}
               alt="Caught!"
               width={150}
               height={200}
+              unoptimized
             />
             <div>
               {currentBerryReward && <p className="text-blue-600 mt-4 font-bold">Congratulations this capture gives you + {currentBerryReward} Berry</p>}
@@ -248,12 +345,13 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle }) => {
 
         {catchStatus === 'escape' && (
           <div className="flex flex-col absolute top-40">
-            <Image
-              src="/Images/openPokeBall.png"
+            <ImageNext
+              src={imageRefs.current['openPokeBall']?.src}
               alt="Escaped!"
               width={200}
               height={200}
               className="pl-[40%]"
+              unoptimized
             />
             <h2 className="text-3xl text-red-500 mt-4">The Pokémon escaped!</h2>
           </div>
