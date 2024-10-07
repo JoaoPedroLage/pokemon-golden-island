@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import React, { useState, useEffect } from 'react';
-import { BattleSceneProps, Pokemon } from '../interfaces';
+import { BattleSceneProps, Pokemon } from '../interfaces/mainInterface';
 import { useGameContext } from '../context/GameContext'; // Importar o contexto
 
 const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle }) => {

@@ -1,7 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { useGameContext } from '../context/GameContext';
-import { Pokemon } from '../interfaces'; // Importando a interface Pokemon
+import { Pokemon } from '../interfaces/mainInterface';
 
 const Pokedex: React.FC = () => {
   const { totalPokemons, capturedPokemons, totalCaptured, releasePokemon } = useGameContext(); // Acessando o contexto

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Key, Position, SpriteProps } from "@/app/interfaces";
+import { Key, Position, SpriteProps } from "@/app/interfaces/mainInterface";
 import { Boundary } from "./Boundary";
 import { BattleZone } from "./BattleZone";
 

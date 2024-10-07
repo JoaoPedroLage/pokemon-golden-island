@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Sprite, BattleZone, Boundary } from './utils/classes';
 import { battleZonesData, collisions } from './data';
 import BattleScene from './components/BattleScene';
-import { Key } from './interfaces';
+import { Key } from './interfaces/mainInterface';
 import { GameProvider } from './context/GameContext';
 import Pokedex from './components/Pokedex';
 

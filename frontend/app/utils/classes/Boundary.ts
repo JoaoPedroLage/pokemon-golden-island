@@ -1,4 +1,4 @@
-import { Position } from '../../interfaces';
+import { Position } from '../../interfaces/mainInterface';
 
 export class Boundary {
   position: Position; // Posição do Boundary

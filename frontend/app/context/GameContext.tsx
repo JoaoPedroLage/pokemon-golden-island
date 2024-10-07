@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Pokemon } from '../interfaces';
+import { Pokemon } from '../interfaces/mainInterface';
 
 // Interface para os dados que serão compartilhados no contexto
 interface GameContextProps {

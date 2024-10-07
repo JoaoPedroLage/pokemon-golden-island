@@ -1,4 +1,4 @@
-import { Position } from '../../interfaces';
+import { Position } from '../../interfaces/mainInterface';
 import { Boundary } from './Boundary';
 
 export class BattleZone {
