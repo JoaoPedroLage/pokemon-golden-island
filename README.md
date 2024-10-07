@@ -6,13 +6,13 @@ Desenvolva uma aplicação com frontend e backend que permita interação com po
 
 ## Requisitos
 
--   [ ] O backend deve ser desenvolvido em [Nestjs](https://github.com/nestjs/nest)
--   [ ] O frontend deve ser desenvolvido em [Nextjs](https://github.com/vercel/next.js)
--   [ ] O banco de dados deve ser o [Postgres](https://www.postgresql.org/)
--   [ ] Para a busca de pokemons, integre a [PokeAPI](https://pokeapi.co/)
--   [ ] Devem estar disponíveis apenas os pokemons da primeira geração
--   [ ] O projeto deve estar versionado em um repositório no Github
--   [ ] O projeto deve conter um README.md com instruções de como inicializar o projeto
+-   [~] O backend deve ser desenvolvido em [Nestjs](https://github.com/nestjs/nest)
+-   [x] O frontend deve ser desenvolvido em [Nextjs](https://github.com/vercel/next.js)
+-   [~] O banco de dados deve ser o [Postgres](https://www.postgresql.org/)
+-   [x] Para a busca de pokemons, integre a [PokeAPI](https://pokeapi.co/)
+-   [x] Devem estar disponíveis apenas os pokemons da primeira geração
+-   [x] O projeto deve estar versionado em um repositório no Github
+-   [x] O projeto deve conter um README.md com instruções de como inicializar o projeto
 
 ## Critérios de avaliação
 
