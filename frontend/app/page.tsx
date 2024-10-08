@@ -343,18 +343,7 @@ const Home: React.FC = () => {
   return (
     <>
       <GameProvider>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            width: '100vw',
-            height: '100vh',
-            backgroundColor: '#333', // Cor de fundo fora do canvas
-            position: 'relative', // Necessário para posicionar o quadrado
-            overflow: 'hidden', // Para evitar que o zoom cause rolagem
-          }}
-        >
+      <div className="flex justify-center items-center w-screen h-screen bg-gray-800 relative overflow-hidden">
 
           {inBattle ? (
             // Renderiza a cena de batalha se o estado inBattle for verdadeiro
@@ -411,13 +400,7 @@ const Home: React.FC = () => {
 
           {/* Mensagem para pressionar Enter */}
           {!showPokedex && !inBattle && (
-            <div
-              className="absolute bottom-10 text-center w-full zIndex: 2"
-              style={{
-                color: 'rgba(255, 255, 255, 0.5)', // Cor branca opaca
-                fontSize: '1.25rem', // Tamanho do texto
-              }}
-            >
+            <div className="absolute bottom-10 text-center w-full z-20 text-gray-400 text-xl">
               Press <span className="font-bold">Enter</span> to open the Pokédex
             </div>
           )}
