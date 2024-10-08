@@ -69,7 +69,7 @@ export class Sprite {
       };
 
       setWasInBattle(false); // Atualiza o estado de batalha
-    } 
+    }
   }
 
   draw(context: CanvasRenderingContext2D) {
@@ -86,6 +86,19 @@ export class Sprite {
     const newWidth = originalWidth * scale;
     const newHeight = originalHeight * scale;
 
+    // // Desenha a parte correta do sprite baseada na direção atual
+    // context.drawImage(
+    //   this.image,
+    //   X,
+    //   Y,
+    //   frameWidth,
+    //   frameHeight,
+    //   X,
+    //   Y,
+    //   newWidth,
+    //   newHeight
+    // );
+
     // Desenha a parte correta do sprite baseada na direção atual
     context.drawImage(
       this.image,
@@ -93,8 +106,8 @@ export class Sprite {
       y,
       frameWidth,
       frameHeight,
-      this.position.x,
-      this.position.y,
+      newWidth * 20,
+      newHeight * 10,
       newWidth,
       newHeight
     );
@@ -109,26 +122,26 @@ export class Sprite {
       y: this.position.y
     };
 
-    const movementSpeed = this.size / 50; // Ajusta a velocidade com base no tamanho do jogador e do canvas
+    const movementSpeed = this.size / 5 // Ajusta a velocidade com base no tamanho do jogador e do canvas
 
     // Lógica de movimentação	do jogador
     if (keys.w.pressed || keys.ArrowUp.pressed) {
-      this.position.y -= movementSpeed; // Move o jogador para cima
+      this.position.y += movementSpeed; // Move o jogador para cima
       isMoving = true;
       this.image = this.sprites!.up;
     }
     if (keys.a.pressed || keys.ArrowLeft.pressed) {
-      this.position.x -= movementSpeed; // Move o jogador para a esquerda
+      this.position.x += movementSpeed; // Move o jogador para a esquerda
       isMoving = true;
       this.image = this.sprites!.left;
     }
     if (keys.s.pressed || keys.ArrowDown.pressed) {
-      this.position.y += movementSpeed; // Move o jogador para baixo
+      this.position.y -= movementSpeed; // Move o jogador para baixo
       isMoving = true;
       this.image = this.sprites!.down;
     }
     if (keys.d.pressed || keys.ArrowRight.pressed) {
-      this.position.x += movementSpeed; // Move o jogador para a direita
+      this.position.x -= movementSpeed; // Move o jogador para a direita
       isMoving = true;
       this.image = this.sprites!.right;
     }

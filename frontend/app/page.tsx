@@ -3,7 +3,8 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Sprite, BattleZone, Boundary } from './utils/classes';
-import { battleZonesData, collisions } from './data';
+// import { battleZonesData, collisions } from './data';
+import { battleZonesData } from './data';
 import BattleScene from './components/BattleScene';
 import { Key } from './interfaces/mainInterface';
 import { GameProvider } from './context/GameContext';
@@ -85,23 +86,23 @@ const Home: React.FC = () => {
       }
     });
 
-    // Criar áreas de colisão levando em consideração o offset
-    collisions.forEach((symbol: number, index: number) => {
-      if (symbol === 1) {
-        const j = index % cols;
-        const i = Math.floor(index / cols);
-        boundaries.push(
-          new Boundary({
-            width: cellWidth,
-            height: cellHeight,
-            position: {
-              x: j * cellWidth + offsetX, // Ajuste com o offset
-              y: i * cellHeight + offsetY, // Ajuste com o offset
-            },
-          })
-        );
-      }
-    });
+    // // Criar áreas de colisão levando em consideração o offset
+    // collisions.forEach((symbol: number, index: number) => {
+    //   if (symbol === 1) {
+    //     const j = index % cols;
+    //     const i = Math.floor(index / cols);
+    //     boundaries.push(
+    //       new Boundary({
+    //         width: cellWidth,
+    //         height: cellHeight,
+    //         position: {
+    //           x: j * cellWidth + offsetX, // Ajuste com o offset
+    //           y: i * cellHeight + offsetY, // Ajuste com o offset
+    //         },
+    //       })
+    //     );
+    //   }
+    // });
 
     const animate = () => {
       if (!imageRef.current) return;
@@ -123,11 +124,15 @@ const Home: React.FC = () => {
         renderWidth = canvasRef.current!.height * imageAspectRatio;
       }
 
-      const offsetX = (canvasRef.current!.width - renderWidth) / 2;
-      const offsetY = (canvasRef.current!.height - renderHeight) / 2;
+      const backgroundOffsetX = (imageRef.current!.width - renderWidth) / 2;
+      const backgroundOffsetY = (imageRef.current!.height - renderHeight) / 2;
+
+      const X = playerRef.current?.position?.x ? playerRef.current?.position?.x / 10 : backgroundOffsetX;
+      const Y = playerRef.current?.position?.y ? playerRef.current?.position?.y / 20 : backgroundOffsetY;
+
 
       // Desenha a imagem no centro do canvas
-      c.drawImage(image, offsetX, offsetY, renderWidth, renderHeight);
+      c.drawImage(image, X, Y, renderWidth, renderHeight);
 
       // // Desenhar as áreas de colisão
       // boundaries.forEach(boundary => {
@@ -346,34 +351,68 @@ const Home: React.FC = () => {
             width: '100vw',
             height: '100vh',
             backgroundColor: '#333', // Cor de fundo fora do canvas
+            position: 'relative', // Necessário para posicionar o quadrado
+            overflow: 'hidden', // Para evitar que o zoom cause rolagem
           }}
         >
 
-          {
-            inBattle ? (
-              // Renderiza a cena de batalha se o estado inBattle for verdadeiro
-              <BattleScene endBattle={() => endBattle()} />
-            ) : (
-              <>
-                <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center">
-                  <div className="text-white">Loading...</div>
-                </div>
+          {inBattle ? (
+            // Renderiza a cena de batalha se o estado inBattle for verdadeiro
+            <BattleScene endBattle={() => endBattle()} />
+          ) : (
+            <>
+              <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center">
+                <div className="text-white">Loading...</div>
+              </div>
+
+              {/* Fundo preto que cobre toda a área */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '0',
+                  left: '0',
+                  width: '100%',
+                  height: '100%',
+                  backgroundColor: 'black', // Fundo preto
+                  zIndex: 1, // Fica abaixo do quadrado
+                }}
+              />
+
+              {/* Quadrado transparente com recorte */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '50%', // Centraliza verticalmente
+                  left: '50%', // Centraliza horizontalmente
+                  transform: 'translate(-50%, -50%)', // Move o quadrado para o centro
+                  width: '80%', // Largura do quadrado
+                  height: '80%', // Altura do quadrado
+                  clipPath: 'inset(0% round 50px)', // Recorta um quadrado com bordas arredondadas (ajuste conforme necessário)
+                  overflow: 'hidden', // Evita transbordamento
+                  zIndex: 2, // Fica acima do fundo
+                }}
+              >
                 <canvas
                   ref={canvasRef}
                   style={{
-                    width: '80%',
-                    height: '80%',
+                    width: '100%',  // Preenche todo o quadrado
+                    // width: '50vw',  // Preenche todo o quadrado
+                    // height: '60vh', // Preenche todo o quadrado
+                    height: '100%', // Preenche todo o quadrado
+                    transform: 'scale(3)', // Aumenta o zoom ao canvas (ajuste conforme necessário)
+                    transformOrigin: 'center', // Centraliza o zoom
                   }}
-                  className="absolute w-full h-full bg-black bg-opacity-50 flex justify-center items-center"
+                  className="bg-black" // Define o fundo do canvas como preto
                 >
                 </canvas>
-              </>
-            )}
+              </div>
+            </>
+          )}
 
           {/* Mensagem para pressionar Enter */}
           {!showPokedex && !inBattle && (
             <div
-              className="absolute bottom-10 text-center w-full"
+              className="absolute bottom-10 text-center w-full zIndex: 2"
               style={{
                 color: 'rgba(255, 255, 255, 0.5)', // Cor branca opaca
                 fontSize: '1.25rem', // Tamanho do texto
