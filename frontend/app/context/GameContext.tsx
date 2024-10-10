@@ -8,6 +8,8 @@ interface GameContextProps {
   capturedPokemons: Pokemon[]; // Mudado para um array de objetos Pokemon
   totalCaptured: number;
   totalPokemons: number;
+  showPokedex: boolean;
+  setShowPokedex: (show: boolean) => void;
   setTotalPokemons: (total: number) => void;
   releasePokemon: (name: string) => void;
   usePokeball: () => void;
@@ -25,6 +27,8 @@ const initialGameState: GameContextProps = {
   capturedPokemons: [],
   totalCaptured: 0,
   totalPokemons: 0,
+  showPokedex: false,
+  setShowPokedex: () => {},
   setTotalPokemons: () => {},
   usePokeball: () => {},
   useBerry: () => {},
@@ -44,6 +48,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [berries, setBerries] = useState<number>(5);
   const [capturedPokemons, setCapturedPokemons] = useState<Pokemon[]>([]);
   const [totalPokemons, setTotalPokemons] = useState(0);
+  const [showPokedex, setShowPokedex] = React.useState(false);
+
 
   // Função para usar uma Pokébola
   const usePokeball = () => {
@@ -114,7 +120,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         berries,
         capturedPokemons,
         totalCaptured,
-        totalPokemons, 
+        totalPokemons,
+        showPokedex,
+        setShowPokedex,
         setTotalPokemons,
         usePokeball,
         useBerry,

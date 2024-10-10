@@ -42,7 +42,7 @@ const Pokedex: React.FC = () => {
 
         {/* Rodapé fixo */}
         <div className="text-center text-sm text-gray-500 mt-6">
-          Press <span className="font-bold">Enter</span> to exit
+          Press <span className="font-bold">Enter or ESC</span> to exit
         </div>
       </div>
     </div>

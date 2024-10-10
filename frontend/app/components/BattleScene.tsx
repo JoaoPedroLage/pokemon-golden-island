@@ -5,9 +5,9 @@
 import ImageNext from 'next/image';
 import React, { useState, useEffect, useRef } from 'react';
 import { BattleSceneProps, Pokemon } from '../interfaces/mainInterface';
-import { useGameContext } from '../context/GameContext'; // Importar o contexto
+import { useGameContext } from '../context/GameContext';
 
-const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle }) => {
+const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, showPokedex, setShowPokedex }) => {
   const [pokemon, setPokemon] = useState<Pokemon | null>(null);
   const [loading, setLoading] = useState(true);
   const [catchStatus, setCatchStatus] = useState<'none' | 'waiting' | 'catch' | 'escape' | null>(null);
@@ -38,10 +38,10 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle }) => {
     const rareTypes = ['dragon', 'ghost', 'psychic'];
     const isRare = rareTypes.some((rareType) => pokemon.type.includes(rareType));
 
-    if (isRare) return 0.75 - berry;
-    else if (pokemon.type.includes('mythical')) return 0.85 - berry;
-    else if (pokemon.type.includes('legendary')) return 0.95 - berry;
-    else return 0.65 - berry;
+    if (isRare) return 0.85 - berry;
+    else if (pokemon.type.includes('mythical')) return 0.90 - berry;
+    else if (pokemon.type.includes('legendary') || pokemon.name === 'MEWTWO') return 0.95 - berry;
+    else return 0.70 - berry;
   };
 
   const HandleBerryClick = () => {
@@ -215,6 +215,28 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle }) => {
       </div>
     );
   }
+
+      // Função para lidar com a pressão da tecla
+      const handleKeyEscape = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+          // event.preventDefault();
+          setShowPokedex(false); // Muda o estado para exibir a Pokédex
+        }
+      };
+  
+      // Função para lidar com a pressão da tecla
+      const handleKeyEnter = (event: KeyboardEvent) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+  
+          setShowPokedex(!showPokedex); // Muda o estado para exibir a Pokédex
+        }
+      };
+  
+      // Adiciona o event listener para tecla esc
+      window.addEventListener('keydown', handleKeyEscape);
+      // Adiciona o event listener para tecla enter
+      window.addEventListener('keypress', handleKeyEnter);
 
   return (
     <div className="flex justify-center items-center w-[80vw] h-[80vh] overflow-hidden relative bg-gray-300/60">

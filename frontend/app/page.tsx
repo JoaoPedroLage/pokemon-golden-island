@@ -309,14 +309,26 @@ const Home: React.FC = () => {
     };
 
     // Função para lidar com a pressão da tecla
-    const handleKeyPress = (event: KeyboardEvent) => {
+    const handleKeyEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        // event.preventDefault();
+        setShowPokedex(false); // Muda o estado para exibir a Pokédex
+      }
+    };
+
+    // Função para lidar com a pressão da tecla
+    const handleKeyEnter = (event: KeyboardEvent) => {
       if (event.key === 'Enter') {
+        event.preventDefault();
+
         setShowPokedex(!showPokedex); // Muda o estado para exibir a Pokédex
       }
     };
 
-    // Adiciona os event listeners para redimensionamento da janela
-    window.addEventListener('keydown', handleKeyPress);
+    // Adiciona o event listener para tecla esc
+    window.addEventListener('keydown', handleKeyEscape);
+    // Adiciona o event listener para tecla enter
+    window.addEventListener('keypress', handleKeyEnter);
     // Adiciona o event listener para redimensionamento da janela
     window.addEventListener('resize', updateCanvasSize);
     // Adiciona os event listeners para tecla pressionada
@@ -325,7 +337,8 @@ const Home: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      window.addEventListener('keydown', handleKeyPress);
+      window.removeEventListener('keydown', handleKeyEscape);
+      window.removeEventListener('keypress', handleKeyEnter);
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('resize', updateCanvasSize);
@@ -352,7 +365,7 @@ const Home: React.FC = () => {
           {
             inBattle ? (
               // Renderiza a cena de batalha se o estado inBattle for verdadeiro
-              <BattleScene endBattle={() => endBattle()} />
+              <BattleScene endBattle={() => endBattle()} showPokedex={showPokedex}  etShowPokedex={setShowPokedex} />
             ) : (
               <>
                 <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center">
@@ -365,8 +378,7 @@ const Home: React.FC = () => {
                     height: '80%',
                   }}
                   className="absolute w-full h-full bg-black bg-opacity-50 flex justify-center items-center"
-                >
-                </canvas>
+                />
               </>
             )}
 

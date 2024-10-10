@@ -55,4 +55,6 @@ export interface Pokemon {
 
 export interface BattleSceneProps {
   endBattle: () => void;
+  showBattle: boolean;
+  setShowBattle: () => void;
 }
