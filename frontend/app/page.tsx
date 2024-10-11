@@ -365,7 +365,7 @@ const Home: React.FC = () => {
           {
             inBattle ? (
               // Renderiza a cena de batalha se o estado inBattle for verdadeiro
-              <BattleScene endBattle={() => endBattle()} showPokedex={showPokedex}  etShowPokedex={setShowPokedex} />
+              <BattleScene endBattle={() => endBattle()} setShowPokedex={() => setShowPokedex(showPokedex)} />
             ) : (
               <>
                 <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center">
@@ -383,7 +383,7 @@ const Home: React.FC = () => {
             )}
 
           {/* Mensagem para pressionar Enter */}
-          {!showPokedex && !inBattle && (
+          {!showPokedex && (
             <div
               className="absolute bottom-10 text-center w-full"
               style={{

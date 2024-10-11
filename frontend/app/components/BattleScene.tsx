@@ -7,7 +7,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BattleSceneProps, Pokemon } from '../interfaces/mainInterface';
 import { useGameContext } from '../context/GameContext';
 
-const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, showPokedex, setShowPokedex }) => {
+const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, setShowPokedex }) => {
   const [pokemon, setPokemon] = useState<Pokemon | null>(null);
   const [loading, setLoading] = useState(true);
   const [catchStatus, setCatchStatus] = useState<'none' | 'waiting' | 'catch' | 'escape' | null>(null);
@@ -17,6 +17,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, showPokedex, setS
   const [currentBerryReward, setCurrentBerryReward] = useState<number | null>(null);
   const [currentPokeballReward, setCurrentPokeballReward] = useState<number | null>(null);
   const [bonusCatchChance, setBonusCatchChance] = useState(0);
+  const [showPokedex, setShowPokedex2] = useState(false);
 
   const imageRefs = useRef<{ [key: string]: HTMLImageElement }>({});
 
@@ -48,7 +49,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, showPokedex, setS
     setGivingBerry(true);
     useBerry(); // Decrementa o número de Berries
 
-    const bonusChance = Math.floor (Math.random()) * 0.3; // Bônus de 0 a 30%
+    const bonusChance = Math.floor(Math.random()) * 0.3; // Bônus de 0 a 30%
     const newBonusChance = getPokemonDifficult(bonusChance + bonusCatchChance);
     setBonusCatchChance(newBonusChance);
 
@@ -200,7 +201,39 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, showPokedex, setS
     };
 
     loadImages();
-  }, [pokemon?.sprite]); // O array vazio faz com que este efeito execute apenas uma vez, quando o componente é montado
+
+    // Função para lidar com a pressão da tecla
+    const handleKeyEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setShowPokedex(false); // Muda o estado para exibir a Pokédex
+      }
+    };
+
+    // Função para lidar com a pressão da tecla
+    const handleKeyEnter = (event: KeyboardEvent) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+
+        setShowPokedex(!showPokedex); // Muda o estado para exibir a Pokédex
+        setShowPokedex2(!showPokedex);
+        console.log(`pokedex, ${showPokedex}`);
+        console.log(`pokedex2, ${showPokedex}`);
+      }
+
+      console.log(`pokedex, ${showPokedex}`);
+    };
+
+    // Adiciona o event listener para tecla esc
+    window.addEventListener('keydown', handleKeyEscape);
+    // Adiciona o event listener para tecla enter
+    window.addEventListener('keypress', handleKeyEnter);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyEscape);
+      window.removeEventListener('keypress', handleKeyEnter);
+    };
+  }, [pokemon?.sprite, setShowPokedex, showPokedex]); // O array vazio faz com que este efeito execute apenas uma vez, quando o componente é montado
 
   if (loading) {
     return (
@@ -215,28 +248,6 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, showPokedex, setS
       </div>
     );
   }
-
-      // Função para lidar com a pressão da tecla
-      const handleKeyEscape = (event: KeyboardEvent) => {
-        if (event.key === 'Escape') {
-          // event.preventDefault();
-          setShowPokedex(false); // Muda o estado para exibir a Pokédex
-        }
-      };
-  
-      // Função para lidar com a pressão da tecla
-      const handleKeyEnter = (event: KeyboardEvent) => {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-  
-          setShowPokedex(!showPokedex); // Muda o estado para exibir a Pokédex
-        }
-      };
-  
-      // Adiciona o event listener para tecla esc
-      window.addEventListener('keydown', handleKeyEscape);
-      // Adiciona o event listener para tecla enter
-      window.addEventListener('keypress', handleKeyEnter);
 
   return (
     <div className="flex justify-center items-center w-[80vw] h-[80vh] overflow-hidden relative bg-gray-300/60">
