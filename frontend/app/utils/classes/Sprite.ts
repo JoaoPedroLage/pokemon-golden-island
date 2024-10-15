@@ -155,7 +155,6 @@ export class Sprite {
       // Reverte a posição se houve colisão
       this.position.x = previousPosition.x;
       this.position.y = previousPosition.y;
-      console.log("Colisão detectada!");
     }
 
     // Verifica se o jogador está na zona de batalha
