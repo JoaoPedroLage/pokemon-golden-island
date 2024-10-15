@@ -38,8 +38,6 @@ const Home: React.FC = () => {
     const cols = 70; // Número de colunas do seu mapa
     const rows = 40; // Número de linhas do seu mapa
 
-    // console.log(inBattle);
-
     if (!imageRef.current) return; // Verifica se a imagem está carregada
 
     c.clearRect(0, 0, canvasRef.current!.width, canvasRef.current!.height);
@@ -166,6 +164,15 @@ const Home: React.FC = () => {
     Object.keys(keysRef.current).forEach((key) => {
       keysRef.current[key as Key] = { pressed: false };
     }); // Reseta todas as teclas
+  };
+
+  // Lógica de entrada na batalha para componente filho
+  const childPokedex = (open: boolean) => {
+    if (open) {
+      setShowPokedex(true);
+    } else {
+      setShowPokedex(false);
+    }
   };
 
   useEffect(() => {
@@ -308,15 +315,16 @@ const Home: React.FC = () => {
       }
     };
 
-    // Função para lidar com a pressão da tecla
+    // Função para lidar com a pressão da tecla Escape
     const handleKeyEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        // event.preventDefault();
+        event.preventDefault();
+
         setShowPokedex(false); // Muda o estado para exibir a Pokédex
       }
     };
 
-    // Função para lidar com a pressão da tecla
+    // Função para lidar com a pressão da tecla Enter
     const handleKeyEnter = (event: KeyboardEvent) => {
       if (event.key === 'Enter') {
         event.preventDefault();
@@ -365,7 +373,7 @@ const Home: React.FC = () => {
           {
             inBattle ? (
               // Renderiza a cena de batalha se o estado inBattle for verdadeiro
-              <BattleScene endBattle={() => endBattle()} setShowPokedex={() => setShowPokedex(showPokedex)} />
+              <BattleScene endBattle={endBattle} childPokedex={childPokedex} />
             ) : (
               <>
                 <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center">
