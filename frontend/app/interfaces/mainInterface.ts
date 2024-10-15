@@ -55,5 +55,5 @@ export interface Pokemon {
 
 export interface BattleSceneProps {
   endBattle: () => void;
-  setShowPokedex: (showPokedex: boolean) => void;
+  childPokedex: (open: boolean) => void;
 }
