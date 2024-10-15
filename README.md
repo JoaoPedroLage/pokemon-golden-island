@@ -35,9 +35,9 @@ First, run the development server:
 ```bash
 #
 cd ./frontd/
-# or
+#
 npm install
-# or
+#
 npm run dev
 # or
 yarn dev
