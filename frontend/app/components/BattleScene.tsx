@@ -7,7 +7,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BattleSceneProps, Pokemon } from '../interfaces/mainInterface';
 import { useGameContext } from '../context/GameContext';
 
-const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, setShowPokedex }) => {
+const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) => {
   const [pokemon, setPokemon] = useState<Pokemon | null>(null);
   const [loading, setLoading] = useState(true);
   const [catchStatus, setCatchStatus] = useState<'none' | 'waiting' | 'catch' | 'escape' | null>(null);
@@ -17,7 +17,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, setShowPokedex })
   const [currentBerryReward, setCurrentBerryReward] = useState<number | null>(null);
   const [currentPokeballReward, setCurrentPokeballReward] = useState<number | null>(null);
   const [bonusCatchChance, setBonusCatchChance] = useState(0);
-  const [showPokedex, setShowPokedex2] = useState(false);
+  const [showPokedex, setShowPokedex] = useState(false);
 
   const imageRefs = useRef<{ [key: string]: HTMLImageElement }>({});
 
@@ -41,7 +41,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, setShowPokedex })
 
     if (isRare) return 0.85 - berry;
     else if (pokemon.type.includes('mythical')) return 0.90 - berry;
-    else if (pokemon.type.includes('legendary') || pokemon.name === 'MEWTWO') return 0.95 - berry;
+    else if (pokemon.type.includes('legendary') || pokemon.name === 'mewtwo') return 0.95 - berry;
     else return 0.70 - berry;
   };
 
@@ -49,8 +49,9 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, setShowPokedex })
     setGivingBerry(true);
     useBerry(); // Decrementa o número de Berries
 
-    const bonusChance = Math.floor(Math.random()) * 0.3; // Bônus de 0 a 30%
-    const newBonusChance = getPokemonDifficult(bonusChance + bonusCatchChance);
+    const bonusChance = (Math.random() * 0.2); // Bônus de 0 a 20%
+    console.log(bonusChance);
+    const newBonusChance = bonusChance + bonusCatchChance;
     setBonusCatchChance(newBonusChance);
 
     setTimeout(() => {
@@ -172,16 +173,13 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, setShowPokedex })
         try {
           const response = await fetch(image.src);
 
-          if (!response.ok) {
-            throw new Error(`Failed to fetch image: ${image.src}`);
-          }
-
           const blob = await response.blob();
           const blobUrl = URL.createObjectURL(blob); // Cria a URL do blob
           img.src = blobUrl; // Define o src como a URL do blob
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
-          console.log(error);
-          console.warn(`Fetch failed for ${image.src}. Falling back to original src.`);
+          // console.log(error);
+          // console.warn(`Fetch failed for ${image.src}. Falling back to original src.`);
           img.src = image.src; // Fallback para o src original
         }
 
@@ -191,7 +189,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, setShowPokedex })
             resolve();
           };
           img.onerror = () => {
-            console.error(`Failed to load image: ${image.src}`);
+            // console.error(`Failed to load image: ${image.src}`);
             resolve(); // Resolve mesmo se falhar para evitar bloqueios
           };
         });
@@ -202,26 +200,23 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, setShowPokedex })
 
     loadImages();
 
-    // Função para lidar com a pressão da tecla
+    // Função para lidar com a pressão da tecla Escape
     const handleKeyEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
-        setShowPokedex(false); // Muda o estado para exibir a Pokédex
+
+        childPokedex(false);
       }
     };
 
-    // Função para lidar com a pressão da tecla
+    // Função para lidar com a pressão da tecla Enter
     const handleKeyEnter = (event: KeyboardEvent) => {
       if (event.key === 'Enter') {
         event.preventDefault();
 
-        setShowPokedex(!showPokedex); // Muda o estado para exibir a Pokédex
-        setShowPokedex2(!showPokedex);
-        console.log(`pokedex, ${showPokedex}`);
-        console.log(`pokedex2, ${showPokedex}`);
+        childPokedex(!showPokedex);
+        setShowPokedex(!showPokedex);
       }
-
-      console.log(`pokedex, ${showPokedex}`);
     };
 
     // Adiciona o event listener para tecla esc
@@ -233,7 +228,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, setShowPokedex })
       window.removeEventListener('keydown', handleKeyEscape);
       window.removeEventListener('keypress', handleKeyEnter);
     };
-  }, [pokemon?.sprite, setShowPokedex, showPokedex]); // O array vazio faz com que este efeito execute apenas uma vez, quando o componente é montado
+  }, [pokemon?.sprite, childPokedex, showPokedex]);
 
   if (loading) {
     return (
