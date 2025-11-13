@@ -3,28 +3,28 @@
 @tailwind utilities;
 
 :root {
-  /* Cores principais - Paleta moderna e acessível */
+  /* Main colors - Modern and accessible palette */
   --background: #f5f7fa;
   --foreground: #2d3748;
   
-  /* Cores de texto - Melhor contraste */
+  /* Text colors - Better contrast */
   --text-primary: #2d3748;
   --text-secondary: #4a5568;
   --text-tertiary: #718096;
   --text-inverse: #ffffff;
   
-  /* Cores de fundo - Tons suaves */
+  /* Background colors - Soft tones */
   --bg-primary: #ffffff;
   --bg-secondary: #f7fafc;
   --bg-tertiary: #edf2f7;
   --bg-overlay: rgba(0, 0, 0, 0.4);
   
-  /* Cores de borda - Mais suaves */
+  /* Border colors - Softer */
   --border-light: #e2e8f0;
   --border-medium: #cbd5e0;
   --border-dark: #a0aec0;
   
-  /* Cores de ação - Vibrantes mas acessíveis */
+  /* Action colors - Vibrant but accessible */
   --primary: #3182ce;
   --primary-hover: #2c5aa0;
   --success: #38a169;
@@ -95,7 +95,7 @@ body {
   line-height: 1.6;
 }
 
-/* Centralização global */
+/* Global centering */
 #__next,
 #root {
   width: 100%;
@@ -117,7 +117,7 @@ p {
   line-height: 1.6;
 }
 
-/* Classes utilitárias customizadas */
+/* Custom utility classes */
 @layer utilities {
   .text-balance {
     text-wrap: balance;
