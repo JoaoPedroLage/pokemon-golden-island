@@ -6,7 +6,7 @@ import axios from 'axios';
 export class PokemonService {
   constructor(private prisma: PrismaService) {}
 
-  // Buscar todos os Pokémonsasync
+  // Get all Pokemon
   async getAll() {
     const response = await axios.get('https://pokeapi.co/api/v2/generation/1');
     const pokemons = response.data.pokemon_species;
@@ -18,8 +18,8 @@ export class PokemonService {
         );
         return {
           name: pokemon.name,
-          sprite: pokemonDetails.data.sprites.front_default, // URL do sprite
-          type: pokemonDetails.data.types.map((type: any) => type.type.name), // Array de tipos
+          sprite: pokemonDetails.data.sprites.front_default, // Sprite URL
+          type: pokemonDetails.data.types.map((type: any) => type.type.name), // Array of types
         };
       }),
     );
@@ -27,7 +27,7 @@ export class PokemonService {
     return formattedPokemons;
   }
 
-  // Buscar um Pokémon aleatório
+  // Get a random Pokemon
   async getRandom() {
     const pokemons = await this.getAll();
     const randomIndex = Math.floor(Math.random() * pokemons.length);
