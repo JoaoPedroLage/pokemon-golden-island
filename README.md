@@ -1,30 +1,55 @@
-# Teste técnico Mono Direct
+# Pokemon Golden Island
 
-## Descrição do problema
+## Description
 
-Desenvolver uma aplicação com frontend e backend que permita interação com pokemons. O usuário pode encontrar pokemons aleatoriamente, capturá-los, soltá-los e visualizar a lista de pokemons capturados.
+A full-stack application that allows users to interact with Pokemon. Users can randomly encounter Pokemon, capture them, release them, and view their captured Pokemon list.
 
-## Requisitos
+## Requirements
 
--   [x] O backend deve ser desenvolvido em [Nestjs](https://github.com/nestjs/nest)
--   [x] O frontend deve ser desenvolvido em [Nextjs](https://github.com/vercel/next.js)
--   [x] O banco de dados deve ser o [Postgres](https://www.postgresql.org/)
--   [x] Para a busca de pokemons, integre a [PokeAPI](https://pokeapi.co/)
--   [x] Devem estar disponíveis apenas os pokemons da primeira geração
--   [x] O projeto deve estar versionado em um repositório no Github
--   [x] O projeto deve conter um README.md com instruções de como inicializar o projeto
+-   [x] Backend developed with [NestJS](https://github.com/nestjs/nest)
+-   [x] Frontend developed with [Next.js](https://github.com/vercel/next.js)
+-   [x] Database: [PostgreSQL](https://www.postgresql.org/)
+-   [x] Pokemon data from [PokeAPI](https://pokeapi.co/)
+-   [x] Only first generation Pokemon available
+-   [x] Project versioned on GitHub
+-   [x] README.md with setup instructions
 
-## Critérios de avaliação
+## Deployment on Render
 
--   Organização do código
--   Qualidade do código
--   Documentação
--   Testes
--   UX/UI
+### Backend Configuration
 
-## 
+The backend is configured to deploy on Render. Make sure to configure the following environment variables in the Render dashboard:
 
-## Frontend - Next
+#### Required Environment Variables:
+
+1. **DATABASE_URL** - PostgreSQL connection string
+   - Format: `postgresql://user:password@host:port/database`
+   - You can create a PostgreSQL database in Render and use the Internal Database URL
+
+2. **JWT_SECRET** - Secret key for JWT token generation
+   - Generate a strong random string (e.g., using `openssl rand -base64 32`)
+
+3. **NODE_ENV** - Set to `production`
+
+4. **PORT** - Server port (default: 3001, but Render will set this automatically)
+
+#### Render Service Configuration:
+
+- **Root Directory**: `backend`
+- **Build Command**: `npm install && npx prisma generate && npm run build`
+- **Start Command**: `npx prisma migrate deploy && npm run start:prod`
+
+The `render.yaml` file is included in the repository and should be automatically detected by Render.
+
+### Frontend Configuration
+
+The frontend is configured to use the backend API URL via environment variable:
+
+- **NEXT_PUBLIC_API_URL** - Backend API URL
+  - For production: `https://pokemon-golden-island.onrender.com`
+  - For local development: `http://localhost:3001`
+
+## Frontend - Next.js
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
@@ -87,24 +112,46 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
-## Project setup
+### Project Setup
 
 ```bash
-$ cd ./backend/
-$ npm install
+cd backend
+npm install
 ```
 
-## Compile and run the project
+### Environment Variables
+
+Create a `.env` file in the `backend` directory:
+
+```env
+DATABASE_URL=postgresql://user:password@localhost:5432/pokemon_golden_age
+JWT_SECRET=your-secret-key-here
+NODE_ENV=development
+PORT=3001
+```
+
+### Database Setup
+
+1. Make sure PostgreSQL is running
+2. Run Prisma migrations:
+
+```bash
+npm run db:generate
+npm run db:migrate
+```
+
+### Compile and Run
 
 ```bash
 # development
-$ npm run start
+npm run start
 
 # watch mode
-$ npm run start:dev
+npm run start:dev
 
 # production mode
-$ npm run start:prod
+npm run build
+npm run start:prod
 ```
 
 ## Run tests
