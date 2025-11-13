@@ -12,31 +12,31 @@ import { Prisma } from '@prisma/client';
 import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
 import { CreatePlayerDto } from '../dto/create-player.dto';
 
-@ApiTags('players') // Agrupa os endpoints sob a tag "players"
+@ApiTags('players') // Groups endpoints under the "players" tag
 @Controller('players')
 export class PlayerController {
   constructor(private readonly playerService: PlayerService) {}
 
-  // Criar um novo player
+  // Create a new player
   @Post()
-  @ApiOperation({ summary: 'Create a new player' }) // Descrição do endpoint
-  @ApiBody({ type: CreatePlayerDto }) // Corpo da requisição com tipo
+  @ApiOperation({ summary: 'Create a new player' }) // Endpoint description
+  @ApiBody({ type: CreatePlayerDto }) // Request body with type
   async createPlayer(@Body() createPlayerDto: CreatePlayerDto) {
     return this.playerService.createPlayer(createPlayerDto.name);
   }
 
-  // Buscar todos os players
+  // Get all players
   @Get()
-  @ApiOperation({ summary: 'Get all players' }) // Descrição do endpoint
+  @ApiOperation({ summary: 'Get all players' }) // Endpoint description
   async findAllPlayers() {
     return this.playerService.findAllPlayers();
   }
 
-  // Atualizar a Pokédex de um jogador (adicionar ou remover Pokemon)
-  // IMPORTANTE: Rotas mais específicas devem vir ANTES de rotas genéricas
+  // Update player Pokedex (add or remove Pokemon)
+  // IMPORTANT: More specific routes must come BEFORE generic routes
   @Put(':id/pokedex')
-  @ApiOperation({ summary: 'Update player Pokedex' }) // Descrição do endpoint
-  @ApiParam({ name: 'id', required: true, description: 'ID of the player' }) // Parâmetro de rota
+  @ApiOperation({ summary: 'Update player Pokedex' }) // Endpoint description
+  @ApiParam({ name: 'id', required: true, description: 'ID of the player' }) // Route parameter
   @ApiBody({
     description: 'Pokemon data and action (add or remove)',
     examples: {
