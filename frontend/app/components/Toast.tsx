@@ -16,13 +16,13 @@ const Toast: React.FC<ToastProps> = ({ toast, onClose }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Animação de entrada
+    // Entrance animation
     setTimeout(() => setIsVisible(true), 10);
 
-    // Auto-remover após a duração
+    // Auto-remove after duration
     const timer = setTimeout(() => {
       setIsVisible(false);
-      setTimeout(() => onClose(toast.id), 300); // Aguarda animação de saída
+      setTimeout(() => onClose(toast.id), 300); // Wait for exit animation
     }, toast.duration || 4000);
 
     return () => clearTimeout(timer);
@@ -74,7 +74,7 @@ const Toast: React.FC<ToastProps> = ({ toast, onClose }) => {
           }}
           className="text-lg font-bold hover:opacity-70 transition-opacity"
           style={{ color: 'var(--text-secondary)' }}
-          aria-label="Fechar"
+          aria-label="Close"
         >
           ×
         </button>
