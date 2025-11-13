@@ -8,10 +8,10 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "node dist/main",
+    "start": "node dist/src/main",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start:prod": "node dist/src/main",
     "db:migrate:deploy": "prisma migrate deploy",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
@@ -30,7 +30,11 @@
     "docker:setup": "node -e \"const fs=require('fs'); if(!fs.existsSync('.env')){fs.writeFileSync('.env','POSTGRES_USER=postgres\\nPOSTGRES_PASSWORD=postgres\\nPOSTGRES_DB=pokemon_golden_age\\nPOSTGRES_PORT=5432\\n'); console.log('Arquivo .env criado!');} else {console.log('Arquivo .env já existe');}\"",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:studio:docker": "docker-compose exec backend npx prisma studio --hostname 0.0.0.0 --port 5555",
+    "db:studio:stop": "docker-compose exec backend pkill -f 'prisma studio' || true",
+    "db:clean": "ts-node scripts/clean-database.ts",
+    "db:reset": "npm run db:clean"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
