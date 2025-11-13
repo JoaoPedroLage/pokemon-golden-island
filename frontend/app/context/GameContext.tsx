@@ -44,21 +44,21 @@ const initialGameState: GameContextProps = {
   playerId: null,
   isLoading: false,
   isSaving: false,
-  setShowPokedex: () => {},
-  setTotalPokemons: () => {},
-  usePokeball: () => {},
-  useBerry: () => {},
-  addCapturedPokemon: async () => {},
-  resetGame: () => {},
-  addPokeballs: () => {},
-  addBerry: () => {},
-  releasePokemon: async () => {},
-  initializePlayer: async () => {},
-  loadPlayer: async () => {},
-  saveToBackend: async () => {},
-  showToast: () => {},
+  setShowPokedex: () => { },
+  setTotalPokemons: () => { },
+  usePokeball: () => { },
+  useBerry: () => { },
+  addCapturedPokemon: async () => { },
+  resetGame: () => { },
+  addPokeballs: () => { },
+  addBerry: () => { },
+  releasePokemon: async () => { },
+  initializePlayer: async () => { },
+  loadPlayer: async () => { },
+  saveToBackend: async () => { },
+  showToast: () => { },
   toasts: [],
-  removeToast: () => {},
+  removeToast: () => { },
 };
 
 // Creating the context
@@ -166,7 +166,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setPokeballs(player.pokeballs);
       setBerries(player.berries);
       setTotalPokemons(player.pokedex?.totalPokemons || 151);
-      
+
       // ALWAYS load from backend first to ensure updated data
       const backendPokemons = player.pokedex?.capturedPokemons.map((p: PokemonData) => ({
         name: p.name,
@@ -174,10 +174,10 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         type: Array.isArray(p.type) ? p.type.join(', ') : p.type,
         quantity: p.quantity || 1,
       })) || [];
-      
+
       // Set backend Pokemon in state
       setCapturedPokemons(backendPokemons);
-      
+
       // Update sessionStorage with backend data
       saveToSessionStorage(backendPokemons, player.id);
       localStorage.setItem('playerId', player.id.toString());
@@ -199,7 +199,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setPokeballs(player.pokeballs);
       setBerries(player.berries);
       setTotalPokemons(player.pokedex?.totalPokemons || 151);
-      
+
       // Load Pokemon from backend
       const backendPokemons = player.pokedex?.capturedPokemons.map((p: PokemonData) => ({
         name: p.name,
@@ -207,13 +207,13 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         type: Array.isArray(p.type) ? p.type.join(', ') : p.type,
         quantity: p.quantity || 1,
       })) || [];
-      
+
       // Set backend Pokemon in state
       setCapturedPokemons(backendPokemons);
-      
+
       // Update sessionStorage with backend data
       saveToSessionStorage(backendPokemons, player.id);
-      
+
       localStorage.setItem('playerId', player.id.toString());
     } catch (error) {
       console.error('Error loading player:', error);
@@ -295,8 +295,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // For each local Pokemon, synchronize with backend using 'set' to define exact quantity
       for (const pokemon of capturedPokemons) {
         // Convert type to string if it's an array
-        const pokemonType = Array.isArray(pokemon.type) 
-          ? pokemon.type.join(', ') 
+        const pokemonType = Array.isArray(pokemon.type)
+          ? pokemon.type.join(', ')
           : pokemon.type;
 
         const pokemonData: PokemonData = {
@@ -324,7 +324,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const existsLocally = capturedPokemons.some(
           (p) => p.name === backendPokemon.name
         );
-        
+
         if (!existsLocally) {
           try {
             // Remove the Pokemon that is no longer in local list
@@ -351,7 +351,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // This preserves local changes that were made (e.g., releasing Pokemon)
       // Data has already been saved to the backend, so we maintain the current local state
       // sessionStorage is already updated by the functions that modify Pokemon
-      
+
       // Show success toast
       const totalSaved = capturedPokemons.length;
       showToast(
@@ -398,10 +398,10 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Function to show toast
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success', duration = 5000) => {
     if (!message) return; // Don't show empty toast
-    
+
     const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
     const newToast: ToastMessage = { id, message, type, duration };
-    
+
     setToasts((prev: ToastMessage[]) => [...prev, newToast]);
   };
 
@@ -414,22 +414,22 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const releasePokemon = (name: string) => {
     setCapturedPokemons((prev) => {
       const pokemonIndex = prev.findIndex((p) => p.name === name);
-      
+
       if (pokemonIndex === -1) return prev; // Pokemon not found
-      
+
       const pokemon = prev[pokemonIndex];
       let newPokemons: Pokemon[];
-      
+
       // Calculate rewards (always give rewards when releasing a Pokemon)
       const pokeballReward = Math.floor(Math.random() * 9) + 2; // 2 to 10 pokeballs
       const berryReward = Math.floor(Math.random() * 4) + 2; // 2 to 5 berries
-      
+
       // Add rewards
       addPokeballs(pokeballReward);
       for (let i = 0; i < berryReward; i++) {
         addBerry();
       }
-      
+
       // If quantity is greater than 1, just decrement
       if (pokemon.quantity > 1) {
         newPokemons = prev.map((p, index) =>
@@ -447,7 +447,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } else {
         // If quantity is 1, remove completely
         newPokemons = prev.filter((p) => p.name !== name);
-        
+
         // Show toast with complete information
         const pokemonName = pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1);
         showToast(
@@ -456,10 +456,10 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           6000
         );
       }
-      
+
       // Save to sessionStorage immediately
       saveToSessionStorage(newPokemons, playerId);
-      
+
       return newPokemons;
     });
   };

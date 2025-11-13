@@ -17,10 +17,10 @@ function AuthContent() {
     // Check authentication asynchronously
     const checkAuth = async () => {
       setIsCheckingAuth(true);
-      
+
       // Small delay to avoid immediate redirect
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       if (authAPI.isAuthenticated()) {
         // Check if token is valid by making a request
         const token = authAPI.getToken();
@@ -33,7 +33,7 @@ function AuthContent() {
                 'Authorization': `Bearer ${token}`,
               },
             });
-            
+
             if (response.ok) {
               // Valid token, redirect
               router.push('/game');
@@ -47,7 +47,7 @@ function AuthContent() {
           }
         }
       }
-      
+
       setIsCheckingAuth(false);
     };
 
@@ -67,7 +67,7 @@ function AuthContent() {
         console.error('Error loading player:', error);
       }
     }
-    
+
     // Redirect to game
     router.push('/game');
   };
