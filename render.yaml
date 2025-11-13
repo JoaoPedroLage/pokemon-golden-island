@@ -2,8 +2,9 @@ services:
   - type: web
     name: pokemon-golden-island-backend
     env: node
-    buildCommand: cd backend && npm install && npx prisma generate && npm run build
-    startCommand: cd backend && npx prisma migrate deploy && npm run start:prod
+    rootDir: backend
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npx prisma migrate deploy && npm run start:prod
     envVars:
       - key: NODE_ENV
         value: production
