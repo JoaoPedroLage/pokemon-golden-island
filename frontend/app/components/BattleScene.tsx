@@ -136,7 +136,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
         setCatchStatus('escape');
         setTimeout(() => {
           setCatchStatus('none');
-          setShowPokemon(true); // Exibe o Pokemon novamente após a fuga
+          setShowPokemon(true); // Show Pokemon again after escape
         }, 1000);
       }
     }, 2000);
@@ -144,7 +144,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
 
   useEffect(() => {
     const fetchRandomPokemon = async () => {
-      // Reseta o bônus de berry para cada nova batalha
+      // Reset berry bonus for each new battle
       setBonusCatchChance(0);
       
       const baseResponse = 'https://pokeapi.co/api/v2';
