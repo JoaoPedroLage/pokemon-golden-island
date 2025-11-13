@@ -32,7 +32,8 @@ export class PlayerController {
     return this.playerService.findAllPlayers();
   }
 
-  // Atualizar a Pokédex de um jogador (adicionar ou remover Pokémon)
+  // Atualizar a Pokédex de um jogador (adicionar ou remover Pokemon)
+  // IMPORTANTE: Rotas mais específicas devem vir ANTES de rotas genéricas
   @Put(':id/pokedex')
   @ApiOperation({ summary: 'Update player Pokedex' }) // Descrição do endpoint
   @ApiParam({ name: 'id', required: true, description: 'ID of the player' }) // Parâmetro de rota
@@ -58,7 +59,7 @@ export class PlayerController {
   async updatePlayerPokedex(
     @Param('id') playerId: string,
     @Body()
-    body: { pokemon: Prisma.PokemonCreateInput; action: 'add' | 'remove' },
+    body: { pokemon: Prisma.PokemonCreateInput; action: 'add' | 'remove' | 'set' },
   ) {
     return this.playerService.updatePlayerPokedex(
       Number(playerId),
@@ -67,10 +68,46 @@ export class PlayerController {
     );
   }
 
-  // Deletar um player
+  // Update player pokeballs and berries
+  // IMPORTANT: More specific routes must come BEFORE generic routes
+  @Put(':id/resources')
+  @ApiOperation({ summary: 'Update player resources (pokeballs and berries)' })
+  @ApiParam({ name: 'id', required: true, description: 'ID of the player' })
+  @ApiBody({
+    description: 'Player resources data',
+    examples: {
+      example1: {
+        summary: 'Update resources',
+        value: {
+          pokeballs: 30,
+          berries: 5,
+        },
+      },
+    },
+  })
+  async updatePlayerResources(
+    @Param('id') playerId: string,
+    @Body() body: { pokeballs?: number; berries?: number },
+  ) {
+    return this.playerService.updatePlayerResources(
+      Number(playerId),
+      body.pokeballs,
+      body.berries,
+    );
+  }
+
+  // Get a player by ID
+  @Get(':id')
+  @ApiOperation({ summary: 'Get a player by ID' })
+  @ApiParam({ name: 'id', required: true, description: 'ID of the player' })
+  async findPlayerById(@Param('id') playerId: string) {
+    return this.playerService.findPlayerById(Number(playerId));
+  }
+
+  // Delete a player
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete a player' }) // Descrição do endpoint
-  @ApiParam({ name: 'id', required: true, description: 'ID of the player' }) // Parâmetro de rota
+  @ApiOperation({ summary: 'Delete a player' }) // Endpoint description
+  @ApiParam({ name: 'id', required: true, description: 'ID of the player' }) // Route parameter
   async deletePlayer(@Param('id') playerId: string) {
     return this.playerService.deletePlayer(Number(playerId));
   }
