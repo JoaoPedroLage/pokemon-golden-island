@@ -4,10 +4,11 @@ import React, { useState, useEffect } from 'react';
 
 interface MobileControlsProps {
   onMove: (direction: 'up' | 'down' | 'left' | 'right') => void;
-  onStop: () => void;
+  onStop: (direction: 'up' | 'down' | 'left' | 'right') => void;
   onOpenPokedex: () => void;
   onToggleTooltip: () => void;
   isPokedexOpen: boolean;
+  isLandscape?: boolean;
 }
 
 const MobileControls: React.FC<MobileControlsProps> = ({
@@ -16,6 +17,7 @@ const MobileControls: React.FC<MobileControlsProps> = ({
   onOpenPokedex,
   onToggleTooltip,
   isPokedexOpen,
+  isLandscape = false,
 }) => {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -36,21 +38,29 @@ const MobileControls: React.FC<MobileControlsProps> = ({
     onMove(direction);
   };
 
-  const handleTouchEnd = () => {
-    onStop();
+  const handleTouchEnd = (direction: 'up' | 'down' | 'left' | 'right') => {
+    onStop(direction);
   };
 
   return (
     <>
       {/* Movement Controls - Bottom Left */}
-      <div className="fixed bottom-4 left-4 z-40 md:hidden touch-none">
-        <div className="relative w-28 h-28 sm:w-32 sm:h-32">
+      <div 
+        className="fixed z-40 md:hidden touch-none"
+        style={{
+          bottom: isLandscape ? '50%' : '1rem',
+          left: isLandscape ? '1rem' : '1rem',
+          transform: isLandscape ? 'translateY(50%) rotate(-90deg)' : 'none',
+          transformOrigin: isLandscape ? 'center center' : 'none',
+        }}
+      >
+        <div className="relative w-36 h-36 sm:w-40 sm:h-40">
           {/* Center circle */}
           <div
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-full"
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-full"
             style={{
-              backgroundColor: 'rgba(0, 0, 0, 0.4)',
-              backdropFilter: 'blur(10px)',
+              backgroundColor: 'rgba(0, 0, 0, 0.2)',
+              backdropFilter: 'blur(1px)',
             }}
           />
 
@@ -58,20 +68,27 @@ const MobileControls: React.FC<MobileControlsProps> = ({
           <button
             onTouchStart={(e) => {
               e.preventDefault();
+              e.stopPropagation();
               handleTouchStart('up');
             }}
             onTouchEnd={(e) => {
               e.preventDefault();
-              handleTouchEnd();
+              e.stopPropagation();
+              handleTouchEnd('up');
+            }}
+            onTouchCancel={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleTouchEnd('up');
             }}
             onMouseDown={() => handleTouchStart('up')}
-            onMouseUp={handleTouchEnd}
-            onMouseLeave={handleTouchEnd}
-            className="absolute top-0 left-1/2 transform -translate-x-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center transition-all active:scale-90 select-none"
+            onMouseUp={() => handleTouchEnd('up')}
+            onMouseLeave={() => handleTouchEnd('up')}
+            className="absolute top-0 left-1/2 transform -translate-x-1/2 w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center transition-all active:scale-90 select-none"
             style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.25)',
-              backdropFilter: 'blur(10px)',
-              border: '2px solid rgba(255, 255, 255, 0.4)',
+              backgroundColor: 'rgba(255, 255, 255, 0.15)',
+              backdropFilter: 'blur(1px)',
+              border: '2px solid rgba(255, 255, 255, 0.25)',
             }}
             aria-label="Move up"
           >
@@ -82,20 +99,27 @@ const MobileControls: React.FC<MobileControlsProps> = ({
           <button
             onTouchStart={(e) => {
               e.preventDefault();
+              e.stopPropagation();
               handleTouchStart('down');
             }}
             onTouchEnd={(e) => {
               e.preventDefault();
-              handleTouchEnd();
+              e.stopPropagation();
+              handleTouchEnd('down');
+            }}
+            onTouchCancel={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleTouchEnd('down');
             }}
             onMouseDown={() => handleTouchStart('down')}
-            onMouseUp={handleTouchEnd}
-            onMouseLeave={handleTouchEnd}
-            className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center transition-all active:scale-90 select-none"
+            onMouseUp={() => handleTouchEnd('down')}
+            onMouseLeave={() => handleTouchEnd('down')}
+            className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center transition-all active:scale-90 select-none"
             style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.25)',
-              backdropFilter: 'blur(10px)',
-              border: '2px solid rgba(255, 255, 255, 0.4)',
+              backgroundColor: 'rgba(255, 255, 255, 0.15)',
+              backdropFilter: 'blur(1px)',
+              border: '2px solid rgba(255, 255, 255, 0.25)',
             }}
             aria-label="Move down"
           >
@@ -106,20 +130,27 @@ const MobileControls: React.FC<MobileControlsProps> = ({
           <button
             onTouchStart={(e) => {
               e.preventDefault();
+              e.stopPropagation();
               handleTouchStart('left');
             }}
             onTouchEnd={(e) => {
               e.preventDefault();
-              handleTouchEnd();
+              e.stopPropagation();
+              handleTouchEnd('left');
+            }}
+            onTouchCancel={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleTouchEnd('left');
             }}
             onMouseDown={() => handleTouchStart('left')}
-            onMouseUp={handleTouchEnd}
-            onMouseLeave={handleTouchEnd}
-            className="absolute left-0 top-1/2 transform -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center transition-all active:scale-90 select-none"
+            onMouseUp={() => handleTouchEnd('left')}
+            onMouseLeave={() => handleTouchEnd('left')}
+            className="absolute left-0 top-1/2 transform -translate-y-1/2 w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center transition-all active:scale-90 select-none"
             style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.25)',
-              backdropFilter: 'blur(10px)',
-              border: '2px solid rgba(255, 255, 255, 0.4)',
+              backgroundColor: 'rgba(255, 255, 255, 0.15)',
+              backdropFilter: 'blur(1px)',
+              border: '2px solid rgba(255, 255, 255, 0.25)',
             }}
             aria-label="Move left"
           >
@@ -130,20 +161,27 @@ const MobileControls: React.FC<MobileControlsProps> = ({
           <button
             onTouchStart={(e) => {
               e.preventDefault();
+              e.stopPropagation();
               handleTouchStart('right');
             }}
             onTouchEnd={(e) => {
               e.preventDefault();
-              handleTouchEnd();
+              e.stopPropagation();
+              handleTouchEnd('right');
+            }}
+            onTouchCancel={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleTouchEnd('right');
             }}
             onMouseDown={() => handleTouchStart('right')}
-            onMouseUp={handleTouchEnd}
-            onMouseLeave={handleTouchEnd}
-            className="absolute right-0 top-1/2 transform -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center transition-all active:scale-90 select-none"
+            onMouseUp={() => handleTouchEnd('right')}
+            onMouseLeave={() => handleTouchEnd('right')}
+            className="absolute right-0 top-1/2 transform -translate-y-1/2 w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center transition-all active:scale-90 select-none"
             style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.25)',
-              backdropFilter: 'blur(10px)',
-              border: '2px solid rgba(255, 255, 255, 0.4)',
+              backgroundColor: 'rgba(255, 255, 255, 0.15)',
+              backdropFilter: 'blur(1px)',
+              border: '2px solid rgba(255, 255, 255, 0.25)',
             }}
             aria-label="Move right"
           >
@@ -153,7 +191,16 @@ const MobileControls: React.FC<MobileControlsProps> = ({
       </div>
 
       {/* Action Buttons - Bottom Right */}
-      <div className="fixed bottom-4 right-4 z-40 md:hidden flex flex-col gap-3">
+      <div 
+        className="fixed z-40 md:hidden flex gap-3"
+        style={{
+          flexDirection: isLandscape ? 'row' : 'column',
+          bottom: isLandscape ? '50%' : '1rem',
+          right: isLandscape ? '1rem' : '1rem',
+          transform: isLandscape ? 'translateY(50%) rotate(-90deg)' : 'none',
+          transformOrigin: isLandscape ? 'center center' : 'none',
+        }}
+      >
         {/* Pokedex Button */}
         <button
           onClick={onOpenPokedex}
