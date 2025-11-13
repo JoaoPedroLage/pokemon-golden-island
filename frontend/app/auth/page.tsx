@@ -13,7 +13,7 @@ function AuthContent() {
   const { loadPlayer } = useGameContext();
 
   useEffect(() => {
-    // Se já estiver autenticado, redireciona para o jogo
+    // If already authenticated, redirect to game
     if (authAPI.isAuthenticated()) {
       router.push('/');
     }
