@@ -1,0 +1,26 @@
+{
+  "name": "pokemon-golden-island",
+  "version": "1.0.0",
+  "description": "Pokemon Golden Island - Full Stack Application",
+  "private": true,
+  "scripts": {
+    "docker:setup": "cd backend && npm run docker:setup",
+    "docker:up": "cd backend && docker-compose up -d",
+    "docker:down": "cd backend && docker-compose down",
+    "docker:stop": "cd backend && docker-compose stop",
+    "docker:start": "cd backend && docker-compose start",
+    "docker:restart": "cd backend && docker-compose restart",
+    "docker:logs": "cd backend && docker-compose logs -f",
+    "docker:ps": "cd backend && docker-compose ps",
+    "docker:clean": "cd backend && docker-compose down -v",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "dev:backend": "cd backend && npm run start:dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "db:migrate": "cd backend && npm run db:migrate",
+    "db:generate": "cd backend && npm run db:generate",
+    "db:studio": "cd backend && npm run db:studio"
+  }
+}
+
