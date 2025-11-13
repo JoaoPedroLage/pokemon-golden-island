@@ -19,6 +19,7 @@ const Game: React.FC = () => {
   const playerRef = useRef<Sprite | null>(null);
   const animationIdRef = useRef<number | null>(null); // Stores the animation ID
   const imageRef = useRef<HTMLImageElement | null>(null); // Ref for the background image
+  const frameCountRef = useRef<number>(0); // Frame counter for saving position
 
   const keysRef = useRef({
     w: { pressed: false },
@@ -37,7 +38,8 @@ const Game: React.FC = () => {
   const [initialPlayerPosition, setInitialPlayerPosition] = useState<{ x: number; y: number } | null>(null); // State to save the initial player position
   const [showPokedex, setShowPokedex] = React.useState(false); // State to control the Pokedex display
   const [showTooltip, setShowTooltip] = useState(false); // State to control the tooltip display
-  const [mobileDirection, setMobileDirection] = useState<Key | null>(null); // Mobile movement direction
+  const [isLandscape, setIsLandscape] = useState(false); // State to track landscape orientation
+  const [isDesktop, setIsDesktop] = useState(false); // State to track if device is desktop/notebook
 
   // Check authentication on load
   useEffect(() => {
@@ -48,6 +50,8 @@ const Game: React.FC = () => {
 
   // Function to start the animation
   const startAnimation = useCallback((c: CanvasRenderingContext2D) => {
+    if (!canvasRef.current) return; // Check if canvas exists
+
     const boundaries: Boundary[] = [];
     const battleZones: BattleZone[] = [];
     const cols = 70; // Number of columns in your map
@@ -55,26 +59,26 @@ const Game: React.FC = () => {
 
     if (!imageRef.current) return; // Check if the image is loaded
 
-    c.clearRect(0, 0, canvasRef.current!.width, canvasRef.current!.height);
+    c.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
     const image = imageRef.current;
 
     const imageAspectRatio = image.width / image.height;
-    const canvasAspectRatio = canvasRef.current!.width / canvasRef.current!.height;
+    const canvasAspectRatio = canvasRef.current.width / canvasRef.current.height;
 
     let canvasWidth, canvasHeight;
 
     if (imageAspectRatio > canvasAspectRatio) {
-      canvasWidth = canvasRef.current!.width;
-      canvasHeight = canvasRef.current!.width / imageAspectRatio;
+      canvasWidth = canvasRef.current.width;
+      canvasHeight = canvasRef.current.width / imageAspectRatio;
     } else {
-      canvasHeight = canvasRef.current!.height;
-      canvasWidth = canvasRef.current!.height * imageAspectRatio;
+      canvasHeight = canvasRef.current.height;
+      canvasWidth = canvasRef.current.height * imageAspectRatio;
     }
 
     // Calculate the offset
-    const offsetX = (canvasRef.current!.width - canvasWidth) / 2;
-    const offsetY = (canvasRef.current!.height - canvasHeight) / 2;
+    const offsetX = (canvasRef.current.width - canvasWidth) / 2;
+    const offsetY = (canvasRef.current.height - canvasHeight) / 2;
 
     // Calculate the width and height of each cell
     const cellWidth = canvasWidth / cols;
@@ -117,27 +121,27 @@ const Game: React.FC = () => {
     });
 
     const animate = () => {
-      if (!imageRef.current) return;
+      if (!imageRef.current || !canvasRef.current) return;
 
-      c.clearRect(0, 0, canvasRef.current!.width, canvasRef.current!.height);
+      c.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
       const image = imageRef.current;
 
       const imageAspectRatio = image.width / image.height;
-      const canvasAspectRatio = canvasRef.current!.width / canvasRef.current!.height;
+      const canvasAspectRatio = canvasRef.current.width / canvasRef.current.height;
 
       let renderWidth, renderHeight;
 
       if (imageAspectRatio > canvasAspectRatio) {
-        renderWidth = canvasRef.current!.width;
-        renderHeight = canvasRef.current!.width / imageAspectRatio;
+        renderWidth = canvasRef.current.width;
+        renderHeight = canvasRef.current.width / imageAspectRatio;
       } else {
-        renderHeight = canvasRef.current!.height;
-        renderWidth = canvasRef.current!.height * imageAspectRatio;
+        renderHeight = canvasRef.current.height;
+        renderWidth = canvasRef.current.height * imageAspectRatio;
       }
 
-      const offsetX = (canvasRef.current!.width - renderWidth) / 2;
-      const offsetY = (canvasRef.current!.height - renderHeight) / 2;
+      const offsetX = (canvasRef.current.width - renderWidth) / 2;
+      const offsetY = (canvasRef.current.height - renderHeight) / 2;
 
       // Draw the image in the center of the canvas
       c.drawImage(image, offsetX, offsetY, renderWidth, renderHeight);
@@ -152,46 +156,43 @@ const Game: React.FC = () => {
       //   battleZone.draw(c); // Battle zones are drawn at adjusted positions
       // });
 
-      // Update keysRef with mobile movement if applicable
-      let keysToUse = keysRef.current;
-      if (mobileDirection) {
-        // Create a copy of keys and simulate the mobile key pressed
-        const mobileKeys = {
-          w: { pressed: mobileDirection === 'w' || mobileDirection === 'ArrowUp' },
-          a: { pressed: mobileDirection === 'a' || mobileDirection === 'ArrowLeft' },
-          s: { pressed: mobileDirection === 's' || mobileDirection === 'ArrowDown' },
-          d: { pressed: mobileDirection === 'd' || mobileDirection === 'ArrowRight' },
-          ArrowUp: { pressed: mobileDirection === 'w' || mobileDirection === 'ArrowUp' },
-          ArrowLeft: { pressed: mobileDirection === 'a' || mobileDirection === 'ArrowLeft' },
-          ArrowDown: { pressed: mobileDirection === 's' || mobileDirection === 'ArrowDown' },
-          ArrowRight: { pressed: mobileDirection === 'd' || mobileDirection === 'ArrowRight' },
-          lastPressed: mobileDirection,
-        };
-        keysToUse = mobileKeys as any;
-      }
+      // Update and draw the player - use keysRef directly (same as keyboard)
+      playerRef.current?.update(c, keysRef.current, boundaries, battleZones);
 
-      // Update and draw the player
-      playerRef.current?.update(c, keysToUse, boundaries, battleZones);
+      // Save player position to localStorage periodically (every 60 frames ~ 1 second at 60fps)
+      frameCountRef.current += 1;
+      if (playerRef.current && frameCountRef.current % 60 === 0) {
+        try {
+          localStorage.setItem('playerPosition', JSON.stringify({
+            x: playerRef.current.position.x,
+            y: playerRef.current.position.y
+          }));
+        } catch (e) {
+          console.error('Error saving player position:', e);
+        }
+      }
 
       // Draw the player
       playerRef.current?.draw(c);
 
-      // Continue the animation
+      // Continue the animation - check only keysRef (same as keyboard)
       const hasKeyPressed = keysRef.current.w.pressed || keysRef.current.a.pressed || 
                            keysRef.current.s.pressed || keysRef.current.d.pressed ||
                            keysRef.current.ArrowUp.pressed || keysRef.current.ArrowDown.pressed ||
-                           keysRef.current.ArrowLeft.pressed || keysRef.current.ArrowRight.pressed ||
-                           mobileDirection !== null;
+                           keysRef.current.ArrowLeft.pressed || keysRef.current.ArrowRight.pressed;
       if (hasKeyPressed) {
         animationIdRef.current = requestAnimationFrame(animate);
       } else {
-        cancelAnimationFrame(animationIdRef.current!);
+        if (animationIdRef.current) {
+          cancelAnimationFrame(animationIdRef.current);
+        }
         animationIdRef.current = null;
+        frameCountRef.current = 0; // Reset frame counter when animation stops
       }
     };
 
     animate(); // Start animation
-  }, [mobileDirection]);
+  }, []);
 
   // Battle exit logic
   const endBattle = () => {
@@ -228,49 +229,69 @@ const Game: React.FC = () => {
     if (!c) return;
 
     const updateCanvasSize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      if (!canvasRef.current) return; // Check if canvas exists
+      
+      // Check if device is mobile and in portrait mode
+      const isMobile = window.innerWidth < 768;
+      const isPortrait = window.innerHeight > window.innerWidth;
+      const isDesktopDevice = window.innerWidth >= 768;
+      
+      setIsDesktop(isDesktopDevice);
+      
+      if (isMobile && isPortrait) {
+        // Force landscape orientation for mobile - use full width
+        canvas.width = window.innerHeight; // Canvas width = screen height (rotated)
+        canvas.height = window.innerWidth; // Canvas height = screen width (rotated)
+        setIsLandscape(true);
+      } else {
+        // Desktop/Notebook: use full window size (canvas will be scaled to 80% via CSS)
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        setIsLandscape(false);
+      }
 
-      if (!imageRef.current) return; // Verifica se a imagem está carregada
+      if (!imageRef.current) return; // Check if image is loaded
 
       const image = imageRef.current;
 
+      if (!canvasRef.current) return; // Check again after updating size
+
       const imageAspectRatio = image.width / image.height;
-      const canvasAspectRatio = canvasRef.current!.width / canvasRef.current!.height;
+      const canvasAspectRatio = canvasRef.current.width / canvasRef.current.height;
 
       let renderWidth, renderHeight;
 
       if (imageAspectRatio > canvasAspectRatio) {
-        renderWidth = canvasRef.current!.width;
-        renderHeight = canvasRef.current!.width / imageAspectRatio;
+        renderWidth = canvasRef.current.width;
+        renderHeight = canvasRef.current.width / imageAspectRatio;
       } else {
-        renderHeight = canvasRef.current!.height;
-        renderWidth = canvasRef.current!.height * imageAspectRatio;
+        renderHeight = canvasRef.current.height;
+        renderWidth = canvasRef.current.height * imageAspectRatio;
       }
 
-      const playerNeWSize = Math.min(renderWidth, renderHeight) / 10; // Tamanho do jogador baseado na tela
+      const playerNeWSize = Math.min(renderWidth, renderHeight) / 10; // Player size based on screen
 
-      // Atualiza o tamanho e a posição do jogador
+      // Update player size and position
       if (playerRef.current) {
-        playerRef.current.resize(playerNeWSize, canvas.width, canvas.height, wasInBattle, setWasInBattle); // Atualiza o tamanho do jogador
+        playerRef.current.resize(playerNeWSize, canvas.width, canvas.height, wasInBattle, setWasInBattle); // Update player size
       }
 
-      // Redesenha o canvas
+      // Redraw canvas
       if (imageRef.current) {
-        c.clearRect(0, 0, canvas.width, canvas.height); // Limpa o canvas
-        startAnimation(c); // Reinicia a animação com as novas proporções
+        c.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+        startAnimation(c); // Restart animation with new proportions
       }
     };
 
-    // Função para carregar as imagens do jogador
+    // Function to load player images
     const playerImagesLoad = () => {
       const image = new Image();
 
       image.src = 'https://storage.cloud.google.com/pokemon-golden-island/pokemonTileSetMap.png';
 
-      // Ouvindo o evento de carregamento da imagem antes de continuar
+      // Listen to image load event before continuing
       image.onload = () => {
-        imageRef.current = image; // Armazena a imagem na ref
+        imageRef.current = image; // Store image in ref
 
         const playerDownImage = new Image();
         playerDownImage.src = 'https://storage.cloud.google.com/pokemon-golden-island/playerDown.png';
@@ -284,7 +305,7 @@ const Game: React.FC = () => {
         const playerRightImage = new Image();
         playerRightImage.src = 'https://storage.cloud.google.com/pokemon-golden-island/playerRight.png';
 
-        // Espera todas as imagens carregarem
+        // Wait for all images to load
         Promise.all([
           new Promise((resolve) => { playerDownImage.onload = resolve; }),
           new Promise((resolve) => { playerUpImage.onload = resolve; }),
@@ -294,9 +315,30 @@ const Game: React.FC = () => {
           // Calculate the player size based on current canvas dimensions
           const playerSize = Math.min(canvas.width, canvas.height) / 10; // Player size based on canvas
 
+          // Try to load saved position from localStorage
+          let savedPosition: { x: number; y: number } | null = null;
+          try {
+            const saved = localStorage.getItem('playerPosition');
+            if (saved) {
+              const parsed = JSON.parse(saved);
+              // Validate saved position is within canvas bounds (with some margin for safety)
+              const margin = playerSize;
+              if (parsed.x >= -margin && parsed.x <= canvas.width + margin && 
+                  parsed.y >= -margin && parsed.y <= canvas.height + margin) {
+                // Clamp position to canvas bounds
+                savedPosition = {
+                  x: Math.max(0, Math.min(canvas.width - playerSize, parsed.x)),
+                  y: Math.max(0, Math.min(canvas.height - playerSize, parsed.y))
+                };
+              }
+            }
+          } catch (e) {
+            console.error('Error loading saved position:', e);
+          }
+
           const playerPosition = wasInBattle && initialPlayerPosition
             ? initialPlayerPosition // Use the initial position if the player was in battle
-            : {
+            : savedPosition || {
               x: (canvas.width - playerSize) / 2, // Center the player on canvas width
               y: (canvas.height - playerSize) / 2, // Center the player on canvas height
             };
@@ -316,11 +358,11 @@ const Game: React.FC = () => {
             inBattle: false,
           });
 
-          playerRef.current = player; // Save the player in the ref to manipulate it later
+          playerRef.current = player; // Save player in ref to manipulate later
 
-          updateCanvasSize(); // Update the canvas and player size
+          updateCanvasSize(); // Update canvas and player size
 
-          // Call the animation function to start
+          // Call animation function to start
           startAnimation(c);
         });
       };
@@ -426,7 +468,7 @@ const Game: React.FC = () => {
 
           {
             inBattle ? (
-              // Renderiza a cena de batalha se o estado inBattle for verdadeiro
+              // Render battle scene if inBattle state is true
               <BattleScene endBattle={endBattle} childPokedex={childPokedex} />
             ) : (
               <>
@@ -442,17 +484,34 @@ const Game: React.FC = () => {
                   className="absolute w-full h-full flex justify-center items-center"
                   style={{
                     position: 'relative',
-                    overflow: 'visible'
+                    overflow: 'hidden',
+                    backgroundColor: 'var(--bg-secondary)',
                   }}
                 >
-                  <canvas
-                    ref={canvasRef}
-                    style={{
-                      width: '80%',
-                      height: '80%',
-                    }}
+                  <div
                     className="absolute"
-                  />
+                    style={{
+                      transform: isLandscape 
+                        ? 'rotate(90deg) translateY(-100%)' 
+                        : isDesktop 
+                          ? 'translate(-50%, -50%)' 
+                          : 'none',
+                      transformOrigin: isLandscape ? 'top left' : 'center center',
+                      width: isLandscape ? '100vh' : isDesktop ? '80%' : '100%',
+                      height: isLandscape ? '100vw' : isDesktop ? '80%' : '100%',
+                      top: isLandscape ? '100%' : isDesktop ? '50%' : '0',
+                      left: isLandscape ? '0' : isDesktop ? '50%' : '0',
+                    }}
+                  >
+                    <canvas
+                      ref={canvasRef}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        display: 'block',
+                      }}
+                    />
+                  </div>
                   {/* Game Info Tooltip - inside the map area */}
                   <GameInfoTooltip isOpen={showTooltip} onClose={() => setShowTooltip(false)} />
                 </div>
@@ -462,31 +521,62 @@ const Game: React.FC = () => {
           {/* Mobile Controls */}
           {!inBattle && (
             <MobileControls
+              isLandscape={isLandscape}
               onMove={(direction) => {
-                // Convert direction to Key
+                // Convert direction to Key (same as keyboard)
                 let key: Key;
                 switch (direction) {
                   case 'up':
-                    key = 'w';
+                    key = isLandscape ? 'ArrowLeft' : 'w';
                     break;
                   case 'down':
-                    key = 's';
+                    key = isLandscape ? 'ArrowRight' : 's';
                     break;
                   case 'left':
-                    key = 'a';
+                    key = isLandscape ? 'ArrowDown' : 'a';
                     break;
                   case 'right':
-                    key = 'd';
+                    key = isLandscape ? 'ArrowUp' : 'd';
                     break;
                 }
-                setMobileDirection(key);
-                if (!animationIdRef.current) {
-                  const c = canvasRef.current?.getContext('2d');
-                  if (c) startAnimation(c);
+                
+                // Update keysRef exactly like keyboard keydown (same behavior)
+                if (key in keysRef.current && keysRef.current[key as Key] && typeof keysRef.current[key as Key] === 'object' && 'pressed' in (keysRef.current[key as Key] as any)) {
+                  (keysRef.current[key as Key] as { pressed: boolean }).pressed = true;
+                  keysRef.current.lastPressed = key;
+                  
+                  if (!animationIdRef.current) {
+                    const c = canvasRef.current?.getContext('2d');
+                    if (c) startAnimation(c);
+                  }
                 }
               }}
-              onStop={() => {
-                setMobileDirection(null);
+              onStop={(direction) => {
+                // Convert direction to Key to reset the correct key (same as keyboard keyup)
+                let key: Key;
+                switch (direction) {
+                  case 'up':
+                    key = isLandscape ? 'ArrowLeft' : 'w';
+                    break;
+                  case 'down':
+                    key = isLandscape ? 'ArrowRight' : 's';
+                    break;
+                  case 'left':
+                    key = isLandscape ? 'ArrowDown' : 'a';
+                    break;
+                  case 'right':
+                    key = isLandscape ? 'ArrowUp' : 'd';
+                    break;
+                }
+                
+                // Reset key exactly like keyboard keyup (same behavior)
+                if (key in keysRef.current && keysRef.current[key as Key] && typeof keysRef.current[key as Key] === 'object' && 'pressed' in (keysRef.current[key as Key] as any)) {
+                  (keysRef.current[key as Key] as { pressed: boolean }).pressed = false;
+                  
+                  if (playerRef.current && !playerRef.current.inBattle) {
+                    playerRef.current.frameCurrent = 0; // Reset frame to 0
+                  }
+                }
               }}
               onOpenPokedex={() => {
                 setShowPokedex(!showPokedex);
@@ -498,7 +588,7 @@ const Game: React.FC = () => {
             />
           )}
 
-          {/* Mensagem para pressionar Enter - apenas desktop */}
+          {/* Message to press Enter - desktop only */}
           {!showPokedex && (
             <div
               className="absolute bottom-10 text-center w-full hidden md:block"
