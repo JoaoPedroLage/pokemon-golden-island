@@ -6,8 +6,10 @@ import { PrismaService } from './prisma/prisma.service';
 import { PokemonService } from './pokemon/pokemon.service';
 import { PokemonController } from './pokemon/pokemon.controller';
 import { PokemonModule } from './pokemon/pokemon.module';
+import { AuthModule } from './auth/auth.module';
+
 @Module({
-  imports: [PlayerModule, PokemonModule],
+  imports: [PlayerModule, PokemonModule, AuthModule],
   controllers: [PlayerController, PokemonController],
   providers: [PlayerService, PrismaService, PokemonService],
 })
