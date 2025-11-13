@@ -6,46 +6,76 @@ import { Prisma } from '@prisma/client';
 export class PlayerService {
   constructor(private prisma: PrismaService) {}
 
-  // Criar um novo player com uma pokedex vazia
+  // Helper function to normalize Pokemon type (array to string)
+  private normalizePokemonType(type: string | string[]): string {
+    if (Array.isArray(type)) {
+      return type.join(', ');
+    }
+    return type;
+  }
+
+  // Create a new player with an empty pokedex
   async createPlayer(name: string) {
     return this.prisma.player.create({
       data: {
         name,
         pokedex: {
           create: {
-            // Cria uma pokedex vazia automaticamente ao criar um jogador
-            totalPokemons: 151,
-            totalCaptured: 0,
-          },
-        },
+        // Creates an empty pokedex automatically when creating a player
+        totalPokemons: 151,
+        totalCaptured: 0,
       },
-      include: { pokedex: true },
+    },
+  },
+  include: { pokedex: true },
+});
+}
+
+// Get all players with their pokedex
+async findAllPlayers() {
+  return this.prisma.player.findMany({
+    include: { 
+      pokedex: { 
+        include: { capturedPokemons: true } 
+      } 
+    },
+  });
+}
+
+// Get a player by ID with their pokedex
+  async findPlayerById(playerId: number) {
+    const player = await this.prisma.player.findUnique({
+      where: { id: playerId },
+      include: { 
+        pokedex: { 
+          include: { capturedPokemons: true } 
+        } 
+      },
     });
+
+    if (!player) {
+      throw new Error('Player not found');
+    }
+
+    return player;
   }
 
-  // Buscar todos os jogadores com suas pokedex
-  async findAllPlayers() {
-    return this.prisma.player.findMany({
-      include: { pokedex: true },
-    });
-  }
-
-  // Atualizar a Pokédex de um jogador (adicionar ou remover Pokémon)
+  // Update a player's Pokedex (add or remove Pokemon)
   async updatePlayerPokedex(
     playerId: number,
     pokemon: Prisma.PokemonCreateInput,
-    action: 'add' | 'remove', // Novo parâmetro indicando a ação
+    action: 'add' | 'remove' | 'set', // New parameter indicating the action
   ) {
     const player = await this.prisma.player.findUnique({
       where: { id: playerId },
-      include: { pokedex: { include: { capturedPokemons: true } } }, // Inclui Pokédex e Pokémons
+      include: { pokedex: { include: { capturedPokemons: true } } }, // Includes Pokedex and Pokemon
     });
 
     if (!player) throw new Error('Player not found');
 
     const { pokedex } = player;
 
-    // Verifica se o Pokémon já está capturado na Pokédex
+    // Check if Pokemon is already captured in Pokedex
     const existingPokemon = await this.prisma.pokemon.findFirst({
       where: {
         name: pokemon.name,
@@ -55,69 +85,153 @@ export class PlayerService {
 
     if (action === 'add') {
       if (existingPokemon) {
-        // Se o Pokémon já estiver capturado, apenas incrementa a quantidade
+        // If Pokemon is already captured, just increment quantity
         await this.prisma.pokemon.update({
           where: { id: existingPokemon.id },
           data: { quantity: existingPokemon.quantity + 1 },
         });
       } else {
-        // Se não existir, adiciona um novo Pokémon à Pokédex
+        // If it doesn't exist, add a new Pokemon to Pokedex
         await this.prisma.pokemon.create({
           data: {
             name: pokemon.name,
             sprite: pokemon.sprite,
-            type: pokemon.type,
-            quantity: pokemon.quantity || 1, // Define uma quantidade padrão se não fornecido
+            type: this.normalizePokemonType(pokemon.type),
+            quantity: pokemon.quantity || 1, // Sets a default quantity if not provided
             pokedexId: pokedex.id,
           },
         });
       }
 
-      // Atualiza o total de Pokémon capturados e o total de Pokémon na Pokédex
+      // Fetch updated pokemons to calculate correctly
+      const updatedPokemons = await this.prisma.pokemon.findMany({
+        where: { pokedexId: pokedex.id },
+      });
+
+      // Update total captured Pokemon and total Pokemon in Pokedex
       await this.prisma.pokedex.update({
         where: { id: pokedex.id },
         data: {
           totalCaptured: existingPokemon
             ? pokedex.totalCaptured
             : pokedex.totalCaptured + 1,
-          totalPokemons:
-            pokedex.capturedPokemons.length + (existingPokemon ? 0 : 1),
+          totalPokemons: updatedPokemons.length,
         },
       });
     } else if (action === 'remove') {
       if (existingPokemon) {
         if (existingPokemon.quantity > 1) {
-          // Se houver mais de um Pokémon, apenas decrementa a quantidade
+          // If there's more than one Pokemon, just decrement quantity
           await this.prisma.pokemon.update({
             where: { id: existingPokemon.id },
             data: { quantity: existingPokemon.quantity - 1 },
           });
         } else {
-          // Se houver apenas um, remove o Pokémon completamente
+          // If there's only one, remove Pokemon completely
           await this.prisma.pokemon.delete({
             where: { id: existingPokemon.id },
           });
         }
 
-        // Atualiza o total de Pokémon capturados e o total de Pokémon na Pokédex
+        // Fetch updated pokemons to calculate correctly
+        const updatedPokemons = await this.prisma.pokemon.findMany({
+          where: { pokedexId: pokedex.id },
+        });
+
+        // Update total captured Pokemon and total Pokemon in Pokedex
         await this.prisma.pokedex.update({
           where: { id: pokedex.id },
           data: {
-            totalCaptured: pokedex.totalCaptured - 1,
-            totalPokemons:
-              pokedex.capturedPokemons.length -
-              (existingPokemon.quantity === 1 ? 1 : 0),
+            totalCaptured: existingPokemon.quantity === 1
+              ? pokedex.totalCaptured - 1
+              : pokedex.totalCaptured,
+            totalPokemons: updatedPokemons.length,
           },
         });
       } else {
         throw new Error('Pokemon not found in Pokedex');
       }
+    } else if (action === 'set') {
+      // Set exact Pokemon quantity
+      if (existingPokemon) {
+        // If Pokemon already exists, update quantity
+        await this.prisma.pokemon.update({
+          where: { id: existingPokemon.id },
+          data: { 
+            quantity: pokemon.quantity || 1,
+            sprite: pokemon.sprite,
+            type: this.normalizePokemonType(pokemon.type),
+          },
+        });
+      } else {
+        // If it doesn't exist, add a new Pokemon to Pokedex
+        await this.prisma.pokemon.create({
+          data: {
+            name: pokemon.name,
+            sprite: pokemon.sprite,
+            type: this.normalizePokemonType(pokemon.type),
+            quantity: pokemon.quantity || 1,
+            pokedexId: pokedex.id,
+          },
+        });
+      }
+
+      // Fetch updated pokemons to calculate correctly
+      const updatedPokemons = await this.prisma.pokemon.findMany({
+        where: { pokedexId: pokedex.id },
+      });
+
+      // Update total captured Pokemon and total Pokemon in Pokedex
+      await this.prisma.pokedex.update({
+        where: { id: pokedex.id },
+        data: {
+          totalCaptured: existingPokemon
+            ? pokedex.totalCaptured
+            : pokedex.totalCaptured + 1,
+          totalPokemons: updatedPokemons.length,
+        },
+      });
     }
 
-    return player;
+    // Return updated player with latest data
+    return this.prisma.player.findUnique({
+      where: { id: playerId },
+      include: { 
+        pokedex: { 
+          include: { capturedPokemons: true } 
+        } 
+      },
+    });
   }
 
-  // Deletar um player e sua Pokédex associada
+  // Atualizar pokeballs e berries de um player
+  async updatePlayerResources(
+    playerId: number,
+    pokeballs?: number,
+    berries?: number,
+  ) {
+    const updateData: { pokeballs?: number; berries?: number } = {};
+    
+    if (pokeballs !== undefined) {
+      updateData.pokeballs = pokeballs;
+    }
+    
+    if (berries !== undefined) {
+      updateData.berries = berries;
+    }
+
+    return this.prisma.player.update({
+      where: { id: playerId },
+      data: updateData,
+      include: {
+        pokedex: {
+          include: { capturedPokemons: true },
+        },
+      },
+    });
+  }
+
+  // Delete a player and their associated Pokedex
   async deletePlayer(playerId: number) {
     const player = await this.prisma.player.findUnique({
       where: { id: playerId },
@@ -126,17 +240,17 @@ export class PlayerService {
 
     if (!player) throw new Error('Player not found');
 
-    // Deleta os Pokémons capturados na Pokédex
+    // Delete captured Pokemon in Pokedex
     await this.prisma.pokemon.deleteMany({
       where: { pokedexId: player.pokedex?.id },
     });
 
-    // Deleta a Pokédex do jogador
+    // Delete player's Pokedex
     await this.prisma.pokedex.delete({
       where: { id: player.pokedex?.id },
     });
 
-    // Deleta o jogador
+    // Delete the player
     await this.prisma.player.delete({
       where: { id: playerId },
     });
