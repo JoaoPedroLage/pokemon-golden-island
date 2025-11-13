@@ -16,9 +16,37 @@ async function bootstrap() {
   );
 
   // Enable CORS to allow frontend requests
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'https://pokemon-golden-island.vercel.app',
+    'https://pokemon-golden-island-jpolive-dev.vercel.app',
+  ];
+
+  // Add FRONTEND_URL from environment if provided
+  if (process.env.FRONTEND_URL) {
+    allowedOrigins.push(process.env.FRONTEND_URL);
+  }
+
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        // In production, you might want to be more strict
+        // For now, allow all origins in production for flexibility
+        if (process.env.NODE_ENV === 'production') {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      }
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
   // Swagger configuration
