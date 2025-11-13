@@ -7,7 +7,7 @@ import { GameContext } from '../context/GameContext';
 const ToastContainer: React.FC = () => {
   const context = useContext(GameContext);
   
-  // Verifica se o contexto está disponível (se está dentro de um GameProvider)
+  // Check if context is available (if inside a GameProvider)
   if (!context || !context.toasts) {
     return null;
   }
@@ -15,7 +15,7 @@ const ToastContainer: React.FC = () => {
   const { toasts, removeToast } = context;
   
   const handleClose = (id: string) => {
-    // Remove o toast usando a função do contexto
+    // Remove toast using context function
     removeToast(id);
   };
 
