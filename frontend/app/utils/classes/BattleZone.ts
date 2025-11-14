@@ -5,11 +5,13 @@ export class BattleZone {
   position: Position; // BattleZone position
   width: number;      // BattleZone width
   height: number;     // BattleZone height
+  zoneType: number;   // Zone type: 1 = normal, 2 = water/ice, 3 = ground/rock/dragon
 
-  constructor({ width, height, position }: { position: Position, width: number, height: number }) {
+  constructor({ width, height, position, zoneType = 1 }: { position: Position, width: number, height: number, zoneType?: number }) {
     this.position = position;
     this.width = width;
     this.height = height;
+    this.zoneType = zoneType;
   }
   draw(ctx: CanvasRenderingContext2D): void {
     ctx.fillStyle = 'rgba(0, 0, 255, 0.5)'; // Visualization color for battle zone
@@ -27,7 +29,11 @@ export class BattleZone {
   }
 
   // Method to start battle
-  static startBattle(startBattleCallback: () => void): void {
+  static startBattle(startBattleCallback: () => void, zoneType: number = 1): void {
+    // Store zone type globally for BattleScene to access
+    if (typeof window !== 'undefined') {
+      (window as any).currentBattleZoneType = zoneType;
+    }
     startBattleCallback(); // Call the function passed as parameter to start battle
   }
 }
