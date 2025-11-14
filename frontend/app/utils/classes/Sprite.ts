@@ -182,18 +182,18 @@ export class Sprite {
       this.position.y = previousPosition.y;
     }
 
-    // Check if player is in battle zone
-    const inBattleZone = battleZones.some(zone =>
+    // Check if player is in battle zone and get the zone type
+    const currentBattleZone = battleZones.find(zone =>
       BattleZone.checkBattleZone(playerRect as BattleZone, zone)
     );
 
     // If in battle zone, roll a chance to start battle
-    if (inBattleZone && isMoving) {
+    if (currentBattleZone && isMoving) {
       const chanceToStartBattle = Math.floor(Math.random() * 101);
       if (chanceToStartBattle > 99) { // 2% chance to start battle
         BattleZone.startBattle(() => {
           this.inBattle = true; // Update player state to in battle
-        });
+        }, currentBattleZone.zoneType);
       }
     }
 
