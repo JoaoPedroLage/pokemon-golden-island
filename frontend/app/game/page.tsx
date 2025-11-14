@@ -3,6 +3,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import NextImage from 'next/image';
 import { Sprite, BattleZone, Boundary } from '../utils/classes';
 import { battleZonesData, collisions } from '../data';
 import BattleScene from '../components/BattleScene';
@@ -38,8 +39,14 @@ const Game: React.FC = () => {
   const [initialPlayerPosition, setInitialPlayerPosition] = useState<{ x: number; y: number } | null>(null); // State to save the initial player position
   const [showPokedex, setShowPokedex] = React.useState(false); // State to control the Pokedex display
   const [showTooltip, setShowTooltip] = useState(false); // State to control the tooltip display
-  const [isLandscape, setIsLandscape] = useState(false); // State to track landscape orientation
+  const [isLandscape, setIsLandscape] = useState(false); // State to track landscape orientation (not used for rotation anymore)
+  const [isLoading, setIsLoading] = useState(true); // State to control loading overlay
   const [isDesktop, setIsDesktop] = useState(false); // State to track if device is desktop/notebook
+  const [isMobileDevice, setIsMobileDevice] = useState(false); // State to track if device is mobile
+  const [viewMode, setViewMode] = useState<'full' | 'fog'>('fog'); // View mode: 'full' for full map, 'fog' for fog of war
+
+  const revealedAreasRef = useRef<Set<string>>(new Set()); // Track revealed areas in fog of war mode
+  const cameraRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 }); // Camera position
 
   // Check authentication on load
   useEffect(() => {
@@ -86,7 +93,7 @@ const Game: React.FC = () => {
 
     // Create battle zones taking the offset into account
     battleZonesData.forEach((symbol: number, index: number) => {
-      if (symbol === 1) {
+      if (symbol === 1 || symbol === 2 || symbol === 3) {
         const j = index % cols;
         const i = Math.floor(index / cols);
         battleZones.push(
@@ -97,6 +104,7 @@ const Game: React.FC = () => {
               x: j * cellWidth + offsetX, // Adjust with the offset
               y: i * cellHeight + offsetY, // Adjust with the offset
             },
+            zoneType: symbol, // Pass zone type: 1 = normal, 2 = water/ice, 3 = ground/rock/dragon
           })
         );
       }
@@ -121,7 +129,7 @@ const Game: React.FC = () => {
     });
 
     const animate = () => {
-      if (!imageRef.current || !canvasRef.current) return;
+      if (!imageRef.current || !canvasRef.current || !playerRef.current) return;
 
       c.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
@@ -143,8 +151,64 @@ const Game: React.FC = () => {
       const offsetX = (canvasRef.current.width - renderWidth) / 2;
       const offsetY = (canvasRef.current.height - renderHeight) / 2;
 
+      // Update camera to follow player (centered on player) in fog mode
+      if (viewMode === 'fog') {
+        // Center camera on player
+        cameraRef.current.x = playerRef.current.position.x - canvasRef.current.width / 2;
+        cameraRef.current.y = playerRef.current.position.y - canvasRef.current.height / 2;
+      } else {
+        // Full map view - no camera offset
+        cameraRef.current.x = 0;
+        cameraRef.current.y = 0;
+      }
+
+      // Save context state
+      c.save();
+
+      // Apply camera offset and zoom for fog of war mode
+      if (viewMode === 'fog') {
+        c.translate(-cameraRef.current.x, -cameraRef.current.y);
+        // Apply zoom effect
+        const scale = 1.8; // 1.8x zoom for better detail
+        const centerX = playerRef.current.position.x;
+        const centerY = playerRef.current.position.y;
+        c.translate(centerX, centerY);
+        c.scale(scale, scale);
+        c.translate(-centerX, -centerY);
+      }
+
       // Draw the image in the center of the canvas
       c.drawImage(image, offsetX, offsetY, renderWidth, renderHeight);
+
+      // Update revealed areas in fog of war mode
+      if (viewMode === 'fog' && playerRef.current) {
+        const playerX = playerRef.current.position.x;
+        const playerY = playerRef.current.position.y;
+        const visionRadius = Math.min(renderWidth, renderHeight) * 0.3; // Vision radius based on canvas size
+
+        // Mark area around player as revealed
+        const gridSize = 20; // Grid cell size for revealed areas
+        const startX = Math.floor((playerX - visionRadius) / gridSize);
+        const endX = Math.ceil((playerX + visionRadius) / gridSize);
+        const startY = Math.floor((playerY - visionRadius) / gridSize);
+        const endY = Math.ceil((playerY + visionRadius) / gridSize);
+
+        for (let x = startX; x <= endX; x++) {
+          for (let y = startY; y <= endY; y++) {
+            const cellX = x * gridSize;
+            const cellY = y * gridSize;
+            const distance = Math.sqrt(
+              Math.pow(cellX - playerX, 2) + Math.pow(cellY - playerY, 2)
+            );
+            if (distance <= visionRadius) {
+              revealedAreasRef.current.add(`${x},${y}`);
+            }
+          }
+        }
+      }
+
+      // Restore context state
+      c.restore();
 
       // // Draw collision areas
       // boundaries.forEach(boundary => {
@@ -155,6 +219,21 @@ const Game: React.FC = () => {
       // battleZones.forEach(battleZone => {
       //   battleZone.draw(c); // Battle zones are drawn at adjusted positions
       // });
+
+      // Save context state before drawing player
+      c.save();
+
+      // Apply camera offset and zoom for fog of war mode
+      if (viewMode === 'fog') {
+        c.translate(-cameraRef.current.x, -cameraRef.current.y);
+        // Apply same zoom effect as background
+        const scale = 1.8;
+        const centerX = playerRef.current.position.x;
+        const centerY = playerRef.current.position.y;
+        c.translate(centerX, centerY);
+        c.scale(scale, scale);
+        c.translate(-centerX, -centerY);
+      }
 
       // Update and draw the player - use keysRef directly (same as keyboard)
       playerRef.current?.update(c, keysRef.current, boundaries, battleZones);
@@ -167,6 +246,10 @@ const Game: React.FC = () => {
             x: playerRef.current.position.x,
             y: playerRef.current.position.y
           }));
+          // Save revealed areas
+          if (viewMode === 'fog') {
+            localStorage.setItem('revealedAreas', JSON.stringify(Array.from(revealedAreasRef.current)));
+          }
         } catch (e) {
           console.error('Error saving player position:', e);
         }
@@ -175,11 +258,61 @@ const Game: React.FC = () => {
       // Draw the player
       playerRef.current?.draw(c);
 
+      // Restore context state
+      c.restore();
+
+      // Draw fog of war overlay if in fog mode
+      if (viewMode === 'fog') {
+        c.save();
+
+        if (playerRef.current) {
+          const visionRadius = Math.min(canvasRef.current.width, canvasRef.current.height) * 0.45;
+          const centerX = canvasRef.current.width / 2;
+          const centerY = canvasRef.current.height / 2;
+
+          // Create circular clipping path (the area that will be visible)
+          c.beginPath();
+          c.arc(centerX, centerY, visionRadius, 0, Math.PI * 2);
+          c.closePath();
+
+          // Invert the clipping region: everything EXCEPT the circle
+          c.rect(0, 0, canvasRef.current.width, canvasRef.current.height);
+
+          // Use even-odd fill rule to create a hole in the middle
+          c.clip('evenodd');
+
+          // Fill the clipped area (everything except the circle) with black
+          c.fillStyle = 'rgba(0, 0, 0, 0.95)';
+          c.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+
+          // Reset clipping
+          c.restore();
+          c.save();
+
+          // Optionally: Add a subtle gradient at the circle edge for softer transition
+          const edgeGradient = c.createRadialGradient(
+            centerX, centerY, visionRadius - 30,
+            centerX, centerY, visionRadius + 30
+          );
+          edgeGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+          edgeGradient.addColorStop(0.5, 'rgba(0, 0, 0, 0.3)');
+          edgeGradient.addColorStop(1, 'rgba(0, 0, 0, 0.95)');
+
+          c.fillStyle = edgeGradient;
+          c.beginPath();
+          c.arc(centerX, centerY, visionRadius + 30, 0, Math.PI * 2);
+          c.fill();
+
+        }
+
+        c.restore();
+      }
+
       // Continue the animation - check only keysRef (same as keyboard)
-      const hasKeyPressed = keysRef.current.w.pressed || keysRef.current.a.pressed || 
-                           keysRef.current.s.pressed || keysRef.current.d.pressed ||
-                           keysRef.current.ArrowUp.pressed || keysRef.current.ArrowDown.pressed ||
-                           keysRef.current.ArrowLeft.pressed || keysRef.current.ArrowRight.pressed;
+      const hasKeyPressed = keysRef.current.w.pressed || keysRef.current.a.pressed ||
+        keysRef.current.s.pressed || keysRef.current.d.pressed ||
+        keysRef.current.ArrowUp.pressed || keysRef.current.ArrowDown.pressed ||
+        keysRef.current.ArrowLeft.pressed || keysRef.current.ArrowRight.pressed;
       if (hasKeyPressed) {
         animationIdRef.current = requestAnimationFrame(animate);
       } else {
@@ -191,8 +324,10 @@ const Game: React.FC = () => {
       }
     };
 
-    animate(); // Start animation
-  }, []);
+    if (playerRef.current) {
+      animate(); // Start animation
+    }
+  }, [viewMode]);
 
   // Battle exit logic
   const endBattle = () => {
@@ -230,24 +365,64 @@ const Game: React.FC = () => {
 
     const updateCanvasSize = () => {
       if (!canvasRef.current) return; // Check if canvas exists
-      
+
       // Check if device is mobile and in portrait mode
+      // Use a more reliable breakpoint to prevent canvas from disappearing
       const isMobile = window.innerWidth < 768;
-      const isPortrait = window.innerHeight > window.innerWidth;
       const isDesktopDevice = window.innerWidth >= 768;
-      
+
       setIsDesktop(isDesktopDevice);
-      
-      if (isMobile && isPortrait) {
-        // Force landscape orientation for mobile - use full width
-        canvas.width = window.innerHeight; // Canvas width = screen height (rotated)
-        canvas.height = window.innerWidth; // Canvas height = screen width (rotated)
-        setIsLandscape(true);
+
+      // Ensure canvas container is always visible, especially for widths between 730-768px
+      if (window.innerWidth < 768) {
+        // Force mobile behavior for any width below 768px
+        if (canvasRef.current && canvasRef.current.parentElement) {
+          const parent = canvasRef.current.parentElement;
+          parent.style.display = 'block';
+          parent.style.visibility = 'visible';
+          parent.style.opacity = '1';
+
+          // Also ensure the grandparent container is visible
+          if (parent.parentElement) {
+            parent.parentElement.style.display = 'block';
+            parent.parentElement.style.visibility = 'visible';
+            parent.parentElement.style.opacity = '1';
+          }
+        }
+      }
+
+      // Define minimum dimensions to prevent canvas from disappearing
+      const MIN_WIDTH = 320;
+      const MIN_HEIGHT = 240;
+
+      // Ensure we always have valid dimensions
+      const screenWidth = Math.max(window.innerWidth || 320, MIN_WIDTH);
+      const screenHeight = Math.max(window.innerHeight || 240, MIN_HEIGHT);
+
+      // Set mobile device state for rotation control
+      setIsMobileDevice(isMobile);
+
+      // Set isLandscape to false for mobile (we'll rotate the canvas instead)
+      // This ensures consistent behavior
+      if (isMobile) {
+        // Mobile: swap width/height since canvas will be rotated 90deg
+        // Use viewport height as canvas width (becomes screen width after rotation)
+        canvas.width = Math.max(screenHeight, MIN_WIDTH);
+        canvas.height = Math.max(screenWidth, MIN_HEIGHT);
+        setIsLandscape(false); // Let CSS handle rotation
+        console.log('Mobile mode: canvas size set to', canvas.width, 'x', canvas.height, 'isMobile:', isMobile);
       } else {
         // Desktop/Notebook: use full window size (canvas will be scaled to 80% via CSS)
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        canvas.width = Math.max(screenWidth, MIN_WIDTH);
+        canvas.height = Math.max(screenHeight, MIN_HEIGHT);
         setIsLandscape(false);
+      }
+
+      // Force canvas to be visible
+      if (canvasRef.current) {
+        canvasRef.current.style.display = 'block';
+        canvasRef.current.style.visibility = 'visible';
+        canvasRef.current.style.opacity = '1';
       }
 
       if (!imageRef.current) return; // Check if image is loaded
@@ -285,33 +460,45 @@ const Game: React.FC = () => {
 
     // Function to load player images
     const playerImagesLoad = () => {
+      // Create all image objects first
       const image = new Image();
+      const playerDownImage = new Image();
+      const playerUpImage = new Image();
+      const playerLeftImage = new Image();
+      const playerRightImage = new Image();
 
+      // Set image sources
       image.src = 'https://storage.cloud.google.com/pokemon-golden-island/pokemonTileSetMap.png';
+      playerDownImage.src = 'https://storage.cloud.google.com/pokemon-golden-island/playerDown.png';
+      playerUpImage.src = 'https://storage.cloud.google.com/pokemon-golden-island/playerUp.png';
+      playerLeftImage.src = 'https://storage.cloud.google.com/pokemon-golden-island/playerLeft.png';
+      playerRightImage.src = 'https://storage.cloud.google.com/pokemon-golden-island/playerRight.png';
 
-      // Listen to image load event before continuing
-      image.onload = () => {
+      // Wait for ALL images to load before proceeding
+      Promise.all([
+        new Promise((resolve, reject) => {
+          image.onload = resolve;
+          image.onerror = reject;
+        }),
+        new Promise((resolve, reject) => {
+          playerDownImage.onload = resolve;
+          playerDownImage.onerror = reject;
+        }),
+        new Promise((resolve, reject) => {
+          playerUpImage.onload = resolve;
+          playerUpImage.onerror = reject;
+        }),
+        new Promise((resolve, reject) => {
+          playerLeftImage.onload = resolve;
+          playerLeftImage.onerror = reject;
+        }),
+        new Promise((resolve, reject) => {
+          playerRightImage.onload = resolve;
+          playerRightImage.onerror = reject;
+        }),
+      ]).then(() => {
+        // All images loaded successfully
         imageRef.current = image; // Store image in ref
-
-        const playerDownImage = new Image();
-        playerDownImage.src = 'https://storage.cloud.google.com/pokemon-golden-island/playerDown.png';
-
-        const playerUpImage = new Image();
-        playerUpImage.src = 'https://storage.cloud.google.com/pokemon-golden-island/playerUp.png';
-
-        const playerLeftImage = new Image();
-        playerLeftImage.src = 'https://storage.cloud.google.com/pokemon-golden-island/playerLeft.png';
-
-        const playerRightImage = new Image();
-        playerRightImage.src = 'https://storage.cloud.google.com/pokemon-golden-island/playerRight.png';
-
-        // Wait for all images to load
-        Promise.all([
-          new Promise((resolve) => { playerDownImage.onload = resolve; }),
-          new Promise((resolve) => { playerUpImage.onload = resolve; }),
-          new Promise((resolve) => { playerLeftImage.onload = resolve; }),
-          new Promise((resolve) => { playerRightImage.onload = resolve; }),
-        ]).then(() => {
           // Calculate the player size based on current canvas dimensions
           const playerSize = Math.min(canvas.width, canvas.height) / 10; // Player size based on canvas
 
@@ -323,8 +510,8 @@ const Game: React.FC = () => {
               const parsed = JSON.parse(saved);
               // Validate saved position is within canvas bounds (with some margin for safety)
               const margin = playerSize;
-              if (parsed.x >= -margin && parsed.x <= canvas.width + margin && 
-                  parsed.y >= -margin && parsed.y <= canvas.height + margin) {
+              if (parsed.x >= -margin && parsed.x <= canvas.width + margin &&
+                parsed.y >= -margin && parsed.y <= canvas.height + margin) {
                 // Clamp position to canvas bounds
                 savedPosition = {
                   x: Math.max(0, Math.min(canvas.width - playerSize, parsed.x)),
@@ -362,10 +549,21 @@ const Game: React.FC = () => {
 
           updateCanvasSize(); // Update canvas and player size
 
-          // Call animation function to start
-          startAnimation(c);
+          // Hide loading overlay only after ALL images are loaded and player is created
+          setIsLoading(false);
+
+          // Call animation function to start after a small delay to ensure everything is ready
+          setTimeout(() => {
+            if (playerRef.current && imageRef.current && canvasRef.current) {
+              startAnimation(c);
+            }
+          }, 100);
+        }).catch((error) => {
+          console.error('Error loading images:', error);
+          // Still hide loading to prevent infinite loading screen
+          setIsLoading(false);
+          alert('Failed to load game images. Please refresh the page.');
         });
-      };
     };
 
     playerImagesLoad(); // Load player images
@@ -436,7 +634,7 @@ const Game: React.FC = () => {
     window.addEventListener('keyup', handleKeyUp);
     // Add event listeners for key release
     window.addEventListener('keydown', handleKeyDown);
-    
+
     // Listener to close Pokedex via mobile
     const handleClosePokedex = () => {
       setShowPokedex(false);
@@ -463,44 +661,101 @@ const Game: React.FC = () => {
           className="flex justify-center items-center w-full h-full"
           style={{
             backgroundColor: 'var(--bg-secondary)',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            overflow: 'hidden',
+            touchAction: 'none',
           }}
         >
 
           {
             inBattle ? (
               // Render battle scene if inBattle state is true
-              <BattleScene endBattle={endBattle} childPokedex={childPokedex} />
+              <div
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  transform: isMobileDevice ? 'rotate(90deg)' : 'none',
+                  transformOrigin: 'center center',
+                }}
+              >
+                <BattleScene endBattle={endBattle} childPokedex={childPokedex} />
+              </div>
             ) : (
               <>
-                <div 
-                  className="absolute top-0 left-0 w-full h-full flex justify-center items-center"
-                  style={{
-                    backgroundColor: 'var(--bg-overlay)',
-                  }}
-                >
-                  <div style={{ color: 'var(--text)' }}>Loading...</div>
-                </div>
+                {isLoading && (
+                  <div
+                    className="absolute top-0 left-0 w-full h-full flex justify-center items-center"
+                    style={{
+                      backgroundColor: 'var(--bg-primary)',
+                      zIndex: 999,
+                    }}
+                  >
+                    <div 
+                      style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        alignItems: 'center',
+                        gap: '1rem'
+                      }}
+                    >
+                      <NextImage 
+                        src="https://storage.cloud.google.com/pokemon-golden-island/pokeball.gif" 
+                        alt="Loading..." 
+                        width={100}
+                        height={100}
+                        unoptimized
+                        priority
+                      />
+                      <div style={{ color: 'var(--text)', fontSize: '1.2rem' }}>Loading...</div>
+                    </div>
+                  </div>
+                )}
                 <div
-                  className="absolute w-full h-full flex justify-center items-center"
+                  className="absolute w-full h-full"
                   style={{
-                    position: 'relative',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    minWidth: '320px',
+                    minHeight: '240px',
                     overflow: 'hidden',
                     backgroundColor: 'var(--bg-secondary)',
+                    display: 'block',
+                    visibility: 'visible',
+                    opacity: 1,
                   }}
                 >
                   <div
-                    className="absolute"
                     style={{
-                      transform: isLandscape 
-                        ? 'rotate(90deg) translateY(-100%)' 
-                        : isDesktop 
-                          ? 'translate(-50%, -50%)' 
-                          : 'none',
-                      transformOrigin: isLandscape ? 'top left' : 'center center',
-                      width: isLandscape ? '100vh' : isDesktop ? '80%' : '100%',
-                      height: isLandscape ? '100vw' : isDesktop ? '80%' : '100%',
-                      top: isLandscape ? '100%' : isDesktop ? '50%' : '0',
-                      left: isLandscape ? '0' : isDesktop ? '50%' : '0',
+                      position: 'absolute',
+                      // Mobile devices ALWAYS rotate 90deg, desktop never rotates
+                      transform: isMobileDevice
+                        ? 'translate(-50%, -50%) rotate(90deg)'
+                        : 'translate(-50%, -50%)',
+                      transformOrigin: 'center center',
+                      // Mobile: use viewport height as width (since rotated) to fill screen
+                      width: isMobileDevice ? '100vh' : isDesktop ? '80%' : '100vw',
+                      height: isMobileDevice ? '100vw' : isDesktop ? '80%' : '100vh',
+                      minWidth: '320px',
+                      minHeight: '240px',
+                      maxWidth: isMobileDevice ? '100vh' : isDesktop ? '80%' : '100vw',
+                      maxHeight: isMobileDevice ? '100vw' : isDesktop ? '80%' : '100vh',
+                      top: '50%',
+                      left: '50%',
+                      display: 'block',
+                      visibility: 'visible',
+                      opacity: 1,
                     }}
                   >
                     <canvas
@@ -509,11 +764,47 @@ const Game: React.FC = () => {
                         width: '100%',
                         height: '100%',
                         display: 'block',
+                        minWidth: '320px',
+                        minHeight: '240px',
+                        maxWidth: '100%',
+                        maxHeight: '100%',
+                        objectFit: 'contain',
+                        visibility: 'visible',
+                        opacity: 1,
                       }}
                     />
                   </div>
                   {/* Game Info Tooltip - inside the map area */}
                   <GameInfoTooltip isOpen={showTooltip} onClose={() => setShowTooltip(false)} />
+
+                  {/* View Mode Toggle Button - top left on desktop, top right on mobile */}
+                  <button
+                    onClick={() => {
+                      const newMode = viewMode === 'full' ? 'fog' : 'full';
+                      setViewMode(newMode);
+                      // Clear revealed areas when switching to fog mode
+                      if (newMode === 'fog') {
+                        revealedAreasRef.current.clear();
+                      }
+                    }}
+                    className="fixed z-50 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-lg"
+                    style={{
+                      width: '3rem',
+                      height: '3rem',
+                      top: '1rem',
+                      left: isMobileDevice ? 'auto' : '1rem',
+                      right: isMobileDevice ? '1rem' : 'auto',
+                      backgroundColor: viewMode === 'fog' ? 'var(--primary)' : 'var(--success)',
+                      color: 'var(--text-inverse)',
+                      border: '2px solid var(--border-medium)',
+                      zIndex: 100,
+                      transform: isMobileDevice ? 'rotate(90deg)' : 'none',
+                    }}
+                    aria-label={viewMode === 'fog' ? 'Switch to full map view' : 'Switch to fog of war view'}
+                    title={viewMode === 'fog' ? 'Show full map' : 'Show fog of war'}
+                  >
+                    <span style={{ fontSize: '1.5rem' }}>{viewMode === 'fog' ? '🗺️' : '👁️'}</span>
+                  </button>
                 </div>
               </>
             )}
@@ -539,12 +830,12 @@ const Game: React.FC = () => {
                     key = isLandscape ? 'ArrowUp' : 'd';
                     break;
                 }
-                
+
                 // Update keysRef exactly like keyboard keydown (same behavior)
                 if (key in keysRef.current && keysRef.current[key as Key] && typeof keysRef.current[key as Key] === 'object' && 'pressed' in (keysRef.current[key as Key] as any)) {
                   (keysRef.current[key as Key] as { pressed: boolean }).pressed = true;
                   keysRef.current.lastPressed = key;
-                  
+
                   if (!animationIdRef.current) {
                     const c = canvasRef.current?.getContext('2d');
                     if (c) startAnimation(c);
@@ -568,11 +859,11 @@ const Game: React.FC = () => {
                     key = isLandscape ? 'ArrowUp' : 'd';
                     break;
                 }
-                
+
                 // Reset key exactly like keyboard keyup (same behavior)
                 if (key in keysRef.current && keysRef.current[key as Key] && typeof keysRef.current[key as Key] === 'object' && 'pressed' in (keysRef.current[key as Key] as any)) {
                   (keysRef.current[key as Key] as { pressed: boolean }).pressed = false;
-                  
+
                   if (playerRef.current && !playerRef.current.inBattle) {
                     playerRef.current.frameCurrent = 0; // Reset frame to 0
                   }
