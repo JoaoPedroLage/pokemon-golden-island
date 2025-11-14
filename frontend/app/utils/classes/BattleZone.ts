@@ -1,6 +1,13 @@
 import { Position } from '../../interfaces/mainInterface';
 import { Boundary } from './Boundary';
 
+// Extend Window interface to include custom property
+declare global {
+  interface Window {
+    currentBattleZoneType?: number;
+  }
+}
+
 export class BattleZone {
   position: Position; // BattleZone position
   width: number;      // BattleZone width
@@ -32,7 +39,7 @@ export class BattleZone {
   static startBattle(startBattleCallback: () => void, zoneType: number = 1): void {
     // Store zone type globally for BattleScene to access
     if (typeof window !== 'undefined') {
-      (window as any).currentBattleZoneType = zoneType;
+      window.currentBattleZoneType = zoneType;
     }
     startBattleCallback(); // Call the function passed as parameter to start battle
   }
