@@ -10,9 +10,10 @@ export interface ToastMessage {
 interface ToastProps {
   toast: ToastMessage;
   onClose: (id: string) => void;
+  isMobile?: boolean;
 }
 
-const Toast: React.FC<ToastProps> = ({ toast, onClose }) => {
+const Toast: React.FC<ToastProps> = ({ toast, onClose, isMobile = false }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -56,7 +57,7 @@ const Toast: React.FC<ToastProps> = ({ toast, onClose }) => {
 
   return (
     <div
-      className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg transition-all duration-300 ${
+      className={`px-6 py-4 rounded-lg shadow-lg transition-all duration-300 ${
         isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'
       }`}
       style={getToastStyles()}
