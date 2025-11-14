@@ -18,6 +18,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
   const [currentPokeballReward, setCurrentPokeballReward] = useState<number | null>(null);
   const [bonusCatchChance, setBonusCatchChance] = useState(0);
   const [showPokedex, setShowPokedex] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const imageRefs = useRef<{ [key: string]: HTMLImageElement }>({});
 
@@ -87,7 +88,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
     const newBonusChance = Math.min(bonusCatchChance + berryBonus, 0.5); // Limits the maximum bonus to 50%
     setBonusCatchChance(newBonusChance);
     
-    console.log(`Berry usada! Bônus atual: ${(newBonusChance * 100).toFixed(1)}%`);
+    console.log(`Berry used! Current bonus: ${(newBonusChance * 100).toFixed(1)}%`);
 
     setTimeout(() => {
       setGivingBerry(false);
@@ -142,6 +143,24 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
     }, 2000);
   };
 
+  // Detect if device is mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      const isMobileDevice = window.innerWidth <= 768;
+      setIsMobile(isMobileDevice);
+    };
+
+    // Check on mount
+    checkMobile();
+
+    // Check on resize
+    window.addEventListener('resize', checkMobile);
+
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
+
   useEffect(() => {
     const fetchRandomPokemon = async () => {
       // Reset berry bonus for each new battle
@@ -152,23 +171,86 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
       const dataGenerationOne = await generationOne.json();
 
       const pokemonSpecies = dataGenerationOne.pokemon_species;
-      const randomPokemon = pokemonSpecies[Math.floor(Math.random() * pokemonSpecies.length)];
-      const randownPokemon = randomPokemon.name;
-      const detailsData = await (await fetch(`${baseResponse}/pokemon/${randownPokemon}`)).json();
-      const sprite = detailsData.sprites.front_default;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const type = detailsData.types.map((typeInfo: any) => typeInfo.type.name);
+      
+      // Get the current battle zone type (1 = normal, 2 = water/ice, 3 = ground/rock/dragon)
+      const zoneType = typeof window !== 'undefined' ? (window as any).currentBattleZoneType || 1 : 1;
+      
+      // Define allowed types for each zone
+      const zoneTypeFilters: { [key: number]: string[] } = {
+        1: [], // Zone 1: all types (no filter)
+        2: ['water', 'ice'], // Zone 2: water and ice types
+        3: ['ground', 'rock', 'dragon'], // Zone 3: ground, rock, and dragon types
+      };
+      
+      const allowedTypes = zoneTypeFilters[zoneType] || [];
+      
+      // Function to check if a pokemon has any of the allowed types
+      const hasPokemonAllowedType = async (pokemonName: string): Promise<boolean> => {
+        if (allowedTypes.length === 0) return true; // No filter for zone 1
+        
+        try {
+          const detailsData = await (await fetch(`${baseResponse}/pokemon/${pokemonName}`)).json();
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const pokemonTypes = detailsData.types.map((typeInfo: any) => typeInfo.type.name.toLowerCase());
+          
+          // Check if pokemon has at least one of the allowed types
+          return pokemonTypes.some((type: string) => allowedTypes.includes(type));
+        } catch (error) {
+          console.error(`Error fetching pokemon ${pokemonName}:`, error);
+          return false;
+        }
+      };
+      
+      // Keep trying to find a pokemon with the correct type
+      let foundValidPokemon = false;
+      let attempts = 0;
+      const maxAttempts = 50; // Limit attempts to avoid infinite loop
+      
+      while (!foundValidPokemon && attempts < maxAttempts) {
+        attempts++;
+        const randomPokemon = pokemonSpecies[Math.floor(Math.random() * pokemonSpecies.length)];
+        const randomPokemonName = randomPokemon.name;
+        
+        if (await hasPokemonAllowedType(randomPokemonName)) {
+          const detailsData = await (await fetch(`${baseResponse}/pokemon/${randomPokemonName}`)).json();
+          const sprite = detailsData.sprites.front_default;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const type = detailsData.types.map((typeInfo: any) => typeInfo.type.name);
 
-      setTotalPokemons(pokemonSpecies.length);
+          setTotalPokemons(pokemonSpecies.length);
 
-      setPokemon({
-        name: detailsData.name,
-        sprite: sprite,
-        type: Array.isArray(type) ? type.join(', ') : type, // Convert array to comma-separated string
-        quantity: 1
-      });
+          setPokemon({
+            name: detailsData.name,
+            sprite: sprite,
+            type: Array.isArray(type) ? type.join(', ') : type, // Convert array to comma-separated string
+            quantity: 1
+          });
+          
+          foundValidPokemon = true;
+        }
+      }
+      
+      // If no valid pokemon found after max attempts, pick any pokemon as fallback
+      if (!foundValidPokemon) {
+        console.warn(`Could not find pokemon with types ${allowedTypes.join(', ')} after ${maxAttempts} attempts. Picking random pokemon.`);
+        const randomPokemon = pokemonSpecies[Math.floor(Math.random() * pokemonSpecies.length)];
+        const randomPokemonName = randomPokemon.name;
+        const detailsData = await (await fetch(`${baseResponse}/pokemon/${randomPokemonName}`)).json();
+        const sprite = detailsData.sprites.front_default;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const type = detailsData.types.map((typeInfo: any) => typeInfo.type.name);
 
-      setLoading(false);
+        setTotalPokemons(pokemonSpecies.length);
+
+        setPokemon({
+          name: detailsData.name,
+          sprite: sprite,
+          type: Array.isArray(type) ? type.join(', ') : type,
+          quantity: 1
+        });
+      }
+
+      // Don't set loading to false yet - wait for images to load
     };
 
     setTimeout(async () => {
@@ -178,6 +260,11 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
 
   useEffect(() => {
     const loadImages = async () => {
+      // Only load images if pokemon data is available
+      if (!pokemon?.sprite) {
+        return;
+      }
+
       const imagesToLoad = [
         {
           name: 'pokemonSprite',
@@ -233,7 +320,11 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
         });
       });
 
+      // Wait for all images to load
       await Promise.all(imagePromises);
+      
+      // Only set loading to false after ALL images are loaded
+      setLoading(false);
     };
 
     loadImages();
@@ -304,21 +395,31 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
               style={{ backgroundColor: 'var(--bg-primary)' }}
             >
               <h2 
-                className="text-2xl mb-1 top-1/2 left-2"
-                style={{ color: 'var(--text-primary)' }}
+                className="mb-1 top-1/2 left-2"
+                style={{ 
+                  color: 'var(--text-primary)',
+                  fontSize: isMobile ? '1.25rem' : '1.5rem'
+                }}
               >
                 {pokemon.name.toUpperCase()}
               </h2>
               <div className="flex items-start">
                 <h2 
-                  className="text-lg pr-1"
-                  style={{ color: 'var(--text-secondary)' }}
+                  className="pr-1"
+                  style={{ 
+                    color: 'var(--text-secondary)',
+                    fontSize: isMobile ? '0.875rem' : '1.125rem'
+                  }}
                 >
                   HP
                 </h2>
                 <div 
-                  className="flex items-center justify-center w-[200px] h-[30px] rounded-full mb-1 relative"
-                  style={{ backgroundColor: 'var(--bg-tertiary)' }}
+                  className="flex items-center justify-center rounded-full mb-1 relative"
+                  style={{ 
+                    backgroundColor: 'var(--bg-tertiary)',
+                    width: isMobile ? '120px' : '200px',
+                    height: isMobile ? '20px' : '30px'
+                  }}
                 >
                   <div className="bg-green-500 w-[98%] h-[80%] rounded-full" />
                 </div>
@@ -327,10 +428,14 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
             <ImageNext
               src={pokemon.sprite}
               alt={pokemon.name}
-              width={300}
-              height={300}
+              width={isMobile ? 180 : 300}
+              height={isMobile ? 180 : 300}
               unoptimized
               priority
+              style={{
+                width: isMobile ? '180px' : '300px',
+                height: isMobile ? '180px' : '300px',
+              }}
             />
           </div>
         )}
@@ -339,9 +444,13 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
           <ImageNext
             src={imageRefs.current['playerBackSprite']?.src}
             alt={'Player'}
-            width={250}
-            height={250}
+            width={isMobile ? 120 : 250}
+            height={isMobile ? 120 : 250}
             unoptimized
+            style={{
+              width: isMobile ? '120px' : '250px',
+              height: isMobile ? '120px' : '250px',
+            }}
           />
         </div>
 
@@ -352,7 +461,9 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
               style={{ 
                 backgroundColor: 'var(--bg-primary)',
                 borderColor: 'var(--border-medium)',
-                color: 'var(--text-primary)'
+                color: 'var(--text-primary)',
+                fontSize: isMobile ? '0.75rem' : '1rem',
+                padding: isMobile ? '0.25rem 0.5rem' : '0.25rem 0.5rem'
               }}
             >
               Balls Left: {pokeballs}
@@ -365,7 +476,9 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
               style={{ 
                 backgroundColor: 'var(--bg-primary)',
                 borderColor: 'var(--border-medium)',
-                color: 'var(--text-primary)'
+                color: 'var(--text-primary)',
+                fontSize: isMobile ? '0.75rem' : '1rem',
+                padding: isMobile ? '0.25rem 0.5rem' : '0.25rem 0.5rem'
               }}
             >
               Berries Left: {berries}
@@ -374,10 +487,13 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
 
           <div className="flex gap-2">
             <button
-              className={`w-[150px] h-[80px] rounded-lg text-xl border-2 transition-colors
+              className={`rounded-lg border-2 transition-colors
                 ${catchStatus === 'catch' || pokeballs === 0 ? 'cursor-not-allowed' : 'hover:opacity-90'}
               `}
               style={{
+                width: isMobile ? '100px' : '150px',
+                height: isMobile ? '60px' : '80px',
+                fontSize: isMobile ? '1rem' : '1.25rem',
                 backgroundColor: catchStatus === 'catch' || pokeballs === 0 
                   ? 'var(--gray-400)' 
                   : 'var(--success)',
@@ -392,10 +508,13 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
 
             <div className="flex flex-col gap-2">
               <button
-                className={`w-[80px] h-[35px] rounded-lg text-sm border-2 transition-colors
+                className={`rounded-lg border-2 transition-colors
                 ${catchStatus === 'catch' || berries === 0 ? 'cursor-not-allowed' : 'hover:opacity-90'}
               `}
                 style={{
+                  width: isMobile ? '60px' : '80px',
+                  height: isMobile ? '28px' : '35px',
+                  fontSize: isMobile ? '0.75rem' : '0.875rem',
                   backgroundColor: catchStatus === 'catch' || berries === 0 
                     ? 'var(--gray-400)' 
                     : 'var(--primary)',
@@ -408,8 +527,11 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
                 BERRY
               </button>
               <button
-                className="w-[80px] h-[35px] rounded-lg text-sm border-2 transition-colors hover:opacity-90"
+                className="rounded-lg border-2 transition-colors hover:opacity-90"
                 style={{
+                  width: isMobile ? '60px' : '80px',
+                  height: isMobile ? '28px' : '35px',
+                  fontSize: isMobile ? '0.75rem' : '0.875rem',
                   backgroundColor: 'var(--danger)',
                   borderColor: 'var(--border-medium)',
                   color: 'var(--text-inverse)'
@@ -427,9 +549,13 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
             <ImageNext
               src={imageRefs.current['catching']?.src}
               alt="Catching Pokemon..."
-              width={100}
-              height={100}
+              width={isMobile ? 60 : 100}
+              height={isMobile ? 60 : 100}
               unoptimized
+              style={{
+                width: isMobile ? '60px' : '100px',
+                height: isMobile ? '60px' : '100px',
+              }}
             />
           </div>
         )}
@@ -439,41 +565,68 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
             <ImageNext
               src={imageRefs.current['berry']?.src}
               alt="Giving Berry..."
-              width={100}
-              height={100}
+              width={isMobile ? 60 : 100}
+              height={isMobile ? 60 : 100}
               unoptimized
+              style={{
+                width: isMobile ? '60px' : '100px',
+                height: isMobile ? '60px' : '100px',
+              }}
             />
           </div>
         )}
 
         {catchStatus === 'catch' && (
-          <div className="absolute top-40 rigth-[2%]">
+          <div 
+            className="absolute flex flex-col items-center"
+            style={{
+              top: isMobile ? '25%' : '40%',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              textAlign: 'center'
+            }}
+          >
             <ImageNext
-              className='absolute right-[25%] top-[20%]'
               src={imageRefs.current['closePokeball']?.src}
               alt="Caught!"
-              width={150}
-              height={200}
+              width={isMobile ? 80 : 150}
+              height={isMobile ? 100 : 200}
               unoptimized
+              style={{
+                width: isMobile ? '80px' : '200px',
+                height: isMobile ? '80px' : '200px',
+              }}
             />
-            <div>
+            <div style={{ marginTop: isMobile ? '0.5rem' : '1rem' }}>
               {currentBerryReward && (
                 <p 
-                  className="mt-4 font-bold"
-                  style={{ color: 'var(--primary)' }}
+                  className="font-bold"
+                  style={{ 
+                    color: 'var(--primary)',
+                    fontSize: isMobile ? '0.7rem' : '1rem',
+                    marginBottom: isMobile ? '0.25rem' : '0.5rem'
+                  }}
                 >
-                  Congratulations this capture gives you + {currentBerryReward} Berry
+                  Congratulations! +{currentBerryReward} Berry
                 </p>
               )}
               <p 
-                className={`mt-4 font-bold ${currentPokeballReward ? '' : 'invisible'}`}
-                style={{ color: 'var(--text-primary)' }}
+                className={`font-bold ${currentPokeballReward ? '' : 'invisible'}`}
+                style={{ 
+                  color: 'var(--text-primary)',
+                  fontSize: isMobile ? '0.7rem' : '1rem',
+                  marginBottom: isMobile ? '0.25rem' : '0.5rem'
+                }}
               >
-                Congratulations this capture gives you + {currentPokeballReward} Pokeballs
+                Congratulations! +{currentPokeballReward} Pokeballs
               </p>
               <h2 
-                className="text-3xl mt-4 font-bold"
-                style={{ color: 'var(--success)' }}
+                className="font-bold"
+                style={{ 
+                  color: 'var(--success)',
+                  fontSize: isMobile ? '1.25rem' : '1.875rem',
+                  marginTop: isMobile ? '0.5rem' : '1rem'
+                }}
               >
                 Caught!
               </h2>
@@ -482,18 +635,29 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
         )}
 
         {catchStatus === 'escape' && (
-          <div className="flex flex-col absolute top-40">
+          <div 
+            className="flex flex-col items-center absolute"
+            style={{
+              top: isMobile ? '30%' : '40%',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              textAlign: 'center'
+            }}
+          >
             <ImageNext
               src={imageRefs.current['openPokeBall']?.src}
               alt="Escaped!"
-              width={200}
-              height={200}
-              className="pl-[40%]"
+              width={isMobile ? 50 : 200}
+              height={isMobile ? 50 : 200}
               unoptimized
             />
             <h2 
-              className="text-3xl mt-4"
-              style={{ color: 'var(--danger)' }}
+              className="mt-4 font-bold"
+              style={{ 
+                color: 'var(--danger)',
+                fontSize: isMobile ? '1.125rem' : '1.875rem',
+                whiteSpace: 'nowrap'
+              }}
             >
               The Pokemon escaped!
             </h2>
