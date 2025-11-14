@@ -13,7 +13,7 @@ interface ToastProps {
   isMobile?: boolean;
 }
 
-const Toast: React.FC<ToastProps> = ({ toast, onClose, isMobile = false }) => {
+const Toast: React.FC<ToastProps> = ({ toast, onClose }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
