@@ -40,7 +40,7 @@ const Game: React.FC = () => {
   const [showPokedex, setShowPokedex] = React.useState(false); // State to control the Pokedex display
   const [showTooltip, setShowTooltip] = useState(false); // State to control the tooltip display
   const [isLandscape, setIsLandscape] = useState(false); // State to track landscape orientation (not used for rotation anymore)
-  const [isLoading, setIsLoading] = useState(true); // State to control loading overlay
+  const [isLoading, setIsLoading] = useState(false); // State to control loading overlay - start as false, will be set to true when authenticated
   const [isDesktop, setIsDesktop] = useState(false); // State to track if device is desktop/notebook
   const [isMobileDevice, setIsMobileDevice] = useState(false); // State to track if device is mobile
   const [viewMode, setViewMode] = useState<'full' | 'fog'>('fog'); // View mode: 'full' for full map, 'fog' for fog of war
@@ -76,10 +76,13 @@ const Game: React.FC = () => {
           if (response.ok) {
             // Valid token, allow access
             setIsAuthenticated(true);
+            setIsCheckingAuth(false);
+            setIsLoading(true); // Start loading images after authentication is validated
           } else {
             // Invalid token, clear and redirect
             authAPI.logout();
             setIsAuthenticated(false);
+            setIsCheckingAuth(false);
             router.push('/login');
           }
         } catch (error) {
@@ -87,15 +90,15 @@ const Game: React.FC = () => {
           console.error('Error validating token:', error);
           authAPI.logout();
           setIsAuthenticated(false);
+          setIsCheckingAuth(false);
           router.push('/login');
         }
       } else {
         // No token, redirect
         setIsAuthenticated(false);
+        setIsCheckingAuth(false);
         router.push('/login');
       }
-
-      setIsCheckingAuth(false);
     };
 
     checkAuth();
@@ -403,6 +406,9 @@ const Game: React.FC = () => {
   };
 
   useEffect(() => {
+    // Only load images if authenticated
+    if (!isAuthenticated) return;
+    
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -698,7 +704,7 @@ const Game: React.FC = () => {
         cancelAnimationFrame(animationIdRef.current);
       }
     };
-  }, [inBattle, initialPlayerPosition, showPokedex, startAnimation, wasInBattle]);
+  }, [inBattle, initialPlayerPosition, showPokedex, startAnimation, wasInBattle, isAuthenticated]);
 
   // Show loading screen while checking authentication
   if (isCheckingAuth) {

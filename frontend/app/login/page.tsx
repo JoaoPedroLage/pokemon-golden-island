@@ -30,17 +30,15 @@ function AuthContent() {
     user: { id: number; email: string; name: string },
     player: { id: number; name: string } | null
   ) => {
-    // If player was created, initialize in context
-    if (player) {
-      try {
-        await loadPlayer(player.id);
-      } catch (error) {
-        console.error('Error loading player:', error);
-      }
-    }
-
-    // Redirect to game
+    // Redirect to game immediately
     router.push('/game');
+    
+    // Load player in background after redirect (non-blocking)
+    if (player) {
+      loadPlayer(player.id).catch((error) => {
+        console.error('Error loading player:', error);
+      });
+    }
   };
 
   return (

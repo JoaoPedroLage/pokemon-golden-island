@@ -20,13 +20,21 @@ const Login: React.FC<LoginProps> = ({ onSuccess, onSwitchToRegister }) => {
     setError('');
     setIsLoading(true);
 
+    // Safety timeout to prevent button from staying disabled forever
+    const timeoutId = setTimeout(() => {
+      setIsLoading(false);
+    }, 10000); // 10 seconds timeout
+
     try {
       const response = await authAPI.login({ email, password });
+      clearTimeout(timeoutId);
+      // Call onSuccess and let it handle the redirect
+      // Don't reset loading here as the component will unmount on redirect
       onSuccess(response.access_token, response.user, response.player);
     } catch (err: unknown) {
+      clearTimeout(timeoutId);
       const error = err as { message?: string };
       setError(error.message || 'Error logging in. Please check your credentials.');
-    } finally {
       setIsLoading(false);
     }
   };
