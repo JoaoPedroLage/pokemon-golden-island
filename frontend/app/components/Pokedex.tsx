@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useGameContext } from '../context/GameContext';
@@ -21,6 +21,16 @@ const Pokedex: React.FC = () => {
     berries
   } = useGameContext(); // Acessando o contexto
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const handleSave = async () => {
     if (!playerId) {
@@ -57,6 +67,8 @@ const Pokedex: React.FC = () => {
       <div
         className="rounded-lg shadow-2xl md:w-4/5 lg:w-3/4 w-[95vw] h-[85vh] flex flex-col overflow-hidden"
         style={{
+          transform: isMobile ? 'rotate(90deg)' : 'none',
+          transformOrigin: 'center center',
           backgroundColor: 'var(--bg-primary)',
           border: '2px solid var(--border-medium)'
         }}
