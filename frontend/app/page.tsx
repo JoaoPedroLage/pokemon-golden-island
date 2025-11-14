@@ -62,7 +62,7 @@ function AuthContent() {
               authAPI.logout();
               setIsCheckingAuth(false);
             }
-          } catch (parseError) {
+          } catch {
             // Couldn't parse response, treat as invalid
             authAPI.logout();
             setIsCheckingAuth(false);
