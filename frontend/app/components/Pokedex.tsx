@@ -56,7 +56,7 @@ const Pokedex: React.FC = () => {
     // Logout
     authAPI.logout();
     // Redirect to login page
-    router.push('/');
+    router.push('/login');
   };
 
   return (

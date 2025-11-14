@@ -13,27 +13,33 @@ function AuthContent() {
   const { loadPlayer } = useGameContext();
 
   useEffect(() => {
-    // If already authenticated, redirect to game
+    // Only check if user is already authenticated with a valid token
+    // Don't validate token here - let the user login manually
+    // If they have a token, they can try to access /game which will validate it
+    // Clear any invalid tokens on login page
     if (authAPI.isAuthenticated()) {
-      router.push('/game');
+      // User has a token, but we won't validate it here
+      // They can try to access /game which will validate and redirect if invalid
+      // For now, just show the login form - they can login again if needed
+      authAPI.logout();
     }
-  }, [router]);
+  }, []);
 
   const handleAuthSuccess = async (
     token: string,
     user: { id: number; email: string; name: string },
     player: { id: number; name: string } | null
   ) => {
-    // Se o player foi criado, inicializa no contexto
+    // If player was created, initialize in context
     if (player) {
       try {
         await loadPlayer(player.id);
       } catch (error) {
-        console.error('Erro ao carregar player:', error);
+        console.error('Error loading player:', error);
       }
     }
-    
-    // Redireciona para o jogo
+
+    // Redirect to game
     router.push('/game');
   };
 
@@ -57,12 +63,11 @@ function AuthContent() {
   );
 }
 
-export default function AuthPage() {
+export default function LoginPage() {
   return (
     <GameProvider>
       <AuthContent />
     </GameProvider>
   );
 }
-
 

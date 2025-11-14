@@ -59,7 +59,7 @@ const Game: React.FC = () => {
       if (!authAPI.isAuthenticated()) {
         setIsAuthenticated(false);
         setIsCheckingAuth(false);
-        router.push('/');
+        router.push('/login');
         return;
       }
 
@@ -80,19 +80,19 @@ const Game: React.FC = () => {
             // Invalid token, clear and redirect
             authAPI.logout();
             setIsAuthenticated(false);
-            router.push('/');
+            router.push('/login');
           }
         } catch (error) {
           // Error validating token, clear and redirect
           console.error('Error validating token:', error);
           authAPI.logout();
           setIsAuthenticated(false);
-          router.push('/');
+          router.push('/login');
         }
       } else {
         // No token, redirect
         setIsAuthenticated(false);
-        router.push('/');
+        router.push('/login');
       }
 
       setIsCheckingAuth(false);
@@ -750,7 +750,7 @@ const Game: React.FC = () => {
             You need to be logged in to access the game. Please log in to continue.
           </p>
           <button
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/login')}
             className="px-6 py-3 rounded-lg transition-all hover:opacity-90 font-medium"
             style={{
               backgroundColor: 'var(--primary)',
