@@ -118,7 +118,7 @@ const GameInfoTooltip: React.FC<GameInfoTooltipProps> = ({ isOpen: externalIsOpe
       {/* Tooltip Content */}
       {displayIsOpen && (
         <div
-          className="fixed md:absolute top-16 right-4 md:right-0 w-[calc(100vw-2rem)] md:w-80 max-w-[90vw] rounded-lg shadow-2xl p-4 md:p-6 overflow-y-auto max-h-[70vh] md:max-h-[80vh]"
+          className="fixed md:absolute top-16 right-4 md:right-0 rounded-lg shadow-2xl"
           style={{
             backgroundColor: 'var(--bg-primary)',
             border: '2px solid var(--border-medium)',
@@ -129,49 +129,79 @@ const GameInfoTooltip: React.FC<GameInfoTooltipProps> = ({ isOpen: externalIsOpe
             top: isMobile ? '50%' : undefined,
             left: isMobile ? '50%' : undefined,
             right: isMobile ? 'auto' : undefined,
+            boxSizing: 'border-box',
+            // On mobile with 90deg rotation: width becomes height, height becomes width
+            // iPhone SE: 375x667 (portrait) or 667x375 (landscape)
+            // After rotation: width (80vh) becomes height, height (80vw) becomes width
+            // Using 80% to ensure it fits with border and padding
+            width: isMobile ? '80vh' : '20rem',
+            maxWidth: isMobile ? '80vh' : '20rem',
+            height: isMobile ? '80vw' : 'auto',
+            maxHeight: isMobile ? '80vw' : '80vh',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            position: 'fixed',
+            padding: 0,
+            margin: 0,
+            contain: 'layout style size', // CSS containment to prevent overflow
           }}
         >
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-              {currentContent.title}
-            </h3>
-            <div className="flex items-center gap-2">
-              {/* Language Toggle */}
-              <button
-                onClick={() => setLanguage(language === 'en' ? 'pt' : 'en')}
-                className="px-2 py-1 rounded text-xs font-medium transition-all hover:opacity-90"
-                style={{
-                  backgroundColor: 'var(--bg-secondary)',
-                  color: 'var(--text-primary)',
-                  border: '1px solid var(--border-medium)'
-                }}
-              >
-                {language === 'en' ? 'PT' : 'EN'}
-              </button>
-              {/* Close Button */}
-              <button
-                onClick={() => {
-                  if (onClose) {
-                    onClose();
-                  } else {
-                    setInternalIsOpen(false);
-                  }
-                  setInternalIsOpen(false); // Ensures internal state is also reset
-                }}
-                className="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold transition-all hover:opacity-90"
-                style={{
-                  backgroundColor: 'var(--danger)',
-                  color: 'var(--text-inverse)'
-                }}
-              >
-                ×
-              </button>
+          {/* Scrollable Content Wrapper */}
+          <div
+            style={{
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              flex: 1,
+              minHeight: 0,
+              WebkitOverflowScrolling: 'touch',
+              padding: isMobile ? '0.75rem' : '1.5rem',
+              boxSizing: 'border-box',
+              width: '100%',
+              height: '100%',
+            }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                {currentContent.title}
+              </h3>
+              <div className="flex items-center gap-2">
+                {/* Language Toggle */}
+                <button
+                  onClick={() => setLanguage(language === 'en' ? 'pt' : 'en')}
+                  className="px-2 py-1 rounded text-xs font-medium transition-all hover:opacity-90"
+                  style={{
+                    backgroundColor: 'var(--bg-secondary)',
+                    color: 'var(--text-primary)',
+                    border: '1px solid var(--border-medium)'
+                  }}
+                >
+                  {language === 'en' ? 'PT' : 'EN'}
+                </button>
+                {/* Close Button */}
+                <button
+                  onClick={() => {
+                    if (onClose) {
+                      onClose();
+                    } else {
+                      setInternalIsOpen(false);
+                    }
+                    setInternalIsOpen(false); // Ensures internal state is also reset
+                  }}
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold transition-all hover:opacity-90"
+                  style={{
+                    backgroundColor: 'var(--danger)',
+                    color: 'var(--text-inverse)'
+                  }}
+                >
+                  ×
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Content Sections */}
-          <div className="space-y-4">
+            {/* Content Sections */}
+            <div className="space-y-4">
             {/* Navigation */}
             <div>
               <h4 className="text-base font-semibold mb-2" style={{ color: 'var(--primary)' }}>
@@ -241,6 +271,7 @@ const GameInfoTooltip: React.FC<GameInfoTooltipProps> = ({ isOpen: externalIsOpe
                 {currentContent.releasing.content}
               </p>
             </div>
+          </div>
           </div>
         </div>
       )}
