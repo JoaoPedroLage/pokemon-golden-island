@@ -786,7 +786,8 @@ const Game: React.FC = () => {
             width: '100vw',
             height: '100vh',
             overflow: 'hidden',
-            touchAction: 'none',
+            touchAction: inBattle ? 'auto' : 'none', // Allow touch events during battle
+            zIndex: 1, // Base z-index for the container
           }}
         >
 
@@ -795,6 +796,9 @@ const Game: React.FC = () => {
               // Render battle scene if inBattle state is true
               <div
                 style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
                   width: '100%',
                   height: '100%',
                   display: 'flex',
@@ -802,13 +806,15 @@ const Game: React.FC = () => {
                   alignItems: 'center',
                   transform: isMobileDevice ? 'rotate(90deg)' : 'none',
                   transformOrigin: 'center center',
+                  zIndex: 1000, // Higher than MobileControls (50), Pokedex (50), and other elements
+                  backgroundColor: 'var(--bg-secondary)',
                 }}
               >
                 <BattleScene endBattle={endBattle} childPokedex={childPokedex} />
               </div>
             ) : (
               <>
-                {isLoading && (
+                {isLoading && !inBattle && (
                   <div
                     className="absolute top-0 left-0 w-full h-full flex justify-center items-center"
                     style={{
@@ -848,9 +854,10 @@ const Game: React.FC = () => {
                     minHeight: '240px',
                     overflow: 'hidden',
                     backgroundColor: 'var(--bg-secondary)',
-                    display: 'block',
-                    visibility: 'visible',
-                    opacity: 1,
+                    display: inBattle ? 'none' : 'block', // Hide canvas when in battle
+                    visibility: inBattle ? 'hidden' : 'visible',
+                    opacity: inBattle ? 0 : 1,
+                    zIndex: inBattle ? -1 : 1, // Put canvas behind when in battle
                   }}
                 >
                   <div
@@ -891,37 +898,39 @@ const Game: React.FC = () => {
                       }}
                     />
                   </div>
-                  {/* Game Info Tooltip - inside the map area */}
-                  <GameInfoTooltip isOpen={showTooltip} onClose={() => setShowTooltip(false)} />
+                  {/* Game Info Tooltip - inside the map area - only show when not in battle */}
+                  {!inBattle && <GameInfoTooltip isOpen={showTooltip} onClose={() => setShowTooltip(false)} />}
 
-                  {/* View Mode Toggle Button - top left on desktop, top right on mobile */}
-                  <button
-                    onClick={() => {
-                      const newMode = viewMode === 'full' ? 'fog' : 'full';
-                      setViewMode(newMode);
-                      // Clear revealed areas when switching to fog mode
-                      if (newMode === 'fog') {
-                        revealedAreasRef.current.clear();
-                      }
-                    }}
-                    className="fixed z-50 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-lg"
-                    style={{
-                      width: '3rem',
-                      height: '3rem',
-                      top: '1rem',
-                      left: isMobileDevice ? 'auto' : '1rem',
-                      right: isMobileDevice ? '1rem' : 'auto',
-                      backgroundColor: viewMode === 'fog' ? 'var(--primary)' : 'var(--success)',
-                      color: 'var(--text-inverse)',
-                      border: '2px solid var(--border-medium)',
-                      zIndex: 100,
-                      transform: isMobileDevice ? 'rotate(90deg)' : 'none',
-                    }}
-                    aria-label={viewMode === 'fog' ? 'Switch to full map view' : 'Switch to fog of war view'}
-                    title={viewMode === 'fog' ? 'Show full map' : 'Show fog of war'}
-                  >
-                    <span style={{ fontSize: '1.5rem' }}>{viewMode === 'fog' ? '🗺️' : '👁️'}</span>
-                  </button>
+                  {/* View Mode Toggle Button - top left on desktop, top right on mobile - only show when not in battle */}
+                  {!inBattle && (
+                    <button
+                      onClick={() => {
+                        const newMode = viewMode === 'full' ? 'fog' : 'full';
+                        setViewMode(newMode);
+                        // Clear revealed areas when switching to fog mode
+                        if (newMode === 'fog') {
+                          revealedAreasRef.current.clear();
+                        }
+                      }}
+                      className="fixed z-50 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-lg"
+                      style={{
+                        width: '3rem',
+                        height: '3rem',
+                        top: '1rem',
+                        left: isMobileDevice ? 'auto' : '1rem',
+                        right: isMobileDevice ? '1rem' : 'auto',
+                        backgroundColor: viewMode === 'fog' ? 'var(--primary)' : 'var(--success)',
+                        color: 'var(--text-inverse)',
+                        border: '2px solid var(--border-medium)',
+                        zIndex: 100,
+                        transform: isMobileDevice ? 'rotate(90deg)' : 'none',
+                      }}
+                      aria-label={viewMode === 'fog' ? 'Switch to full map view' : 'Switch to fog of war view'}
+                      title={viewMode === 'fog' ? 'Show full map' : 'Show fog of war'}
+                    >
+                      <span style={{ fontSize: '1.5rem' }}>{viewMode === 'fog' ? '🗺️' : '👁️'}</span>
+                    </button>
+                  )}
                 </div>
               </>
             )}

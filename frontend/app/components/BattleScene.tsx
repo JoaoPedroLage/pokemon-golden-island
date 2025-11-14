@@ -384,8 +384,14 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
 
   return (
     <div 
-      className="flex justify-center items-center w-[80vw] h-[80vh] overflow-hidden relative"
-      style={{ backgroundColor: 'var(--bg-tertiary)' }}
+      className="flex justify-center items-center overflow-hidden relative"
+      style={{ 
+        width: isMobile ? '100vw' : '80vw',
+        height: isMobile ? '100vh' : '80vh',
+        backgroundColor: 'var(--bg-tertiary)',
+        zIndex: 1001, // Ensure it's above the container
+        position: 'relative',
+      }}
     >
       <div className="flex flex-row-reverse w-[60vw] h-[65vh] relative">
         {pokemon && showPokemon && (
