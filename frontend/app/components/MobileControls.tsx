@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
+import pokedexImage from '../images/pokedex-icon.jpg';
 
 interface MobileControlsProps {
   onMove: (direction: 'up' | 'down' | 'left' | 'right') => void;
@@ -44,17 +46,25 @@ const MobileControls: React.FC<MobileControlsProps> = ({
 
   return (
     <>
-      {/* Movement Controls - Bottom Left */}
+      {/* Movement Controls - Top Left (rotated 90deg clockwise) */}
       <div 
-        className="fixed z-40 md:hidden touch-none"
+        className="fixed z-50 md:hidden touch-none"
         style={{
-          bottom: isLandscape ? '50%' : '1rem',
-          left: isLandscape ? '1rem' : '1rem',
-          transform: isLandscape ? 'translateY(50%) rotate(-90deg)' : 'none',
-          transformOrigin: isLandscape ? 'center center' : 'none',
+          top: '1rem',
+          left: '1rem',
+          width: 'auto',
+          height: 'auto',
+          transform: 'rotate(90deg)',
+          transformOrigin: 'center center',
         }}
       >
-        <div className="relative w-36 h-36 sm:w-40 sm:h-40">
+        <div 
+          className="relative"
+          style={{
+            width: isLandscape ? '9rem' : '9rem',
+            height: isLandscape ? '9rem' : '9rem',
+          }}
+        >
           {/* Center circle */}
           <div
             className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-full"
@@ -84,8 +94,10 @@ const MobileControls: React.FC<MobileControlsProps> = ({
             onMouseDown={() => handleTouchStart('up')}
             onMouseUp={() => handleTouchEnd('up')}
             onMouseLeave={() => handleTouchEnd('up')}
-            className="absolute top-0 left-1/2 transform -translate-x-1/2 w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center transition-all active:scale-90 select-none"
+            className="absolute top-0 left-1/2 transform -translate-x-1/2 rounded-lg flex items-center justify-center transition-all active:scale-90 select-none"
             style={{
+              width: '3rem',
+              height: '3rem',
               backgroundColor: 'rgba(255, 255, 255, 0.15)',
               backdropFilter: 'blur(1px)',
               border: '2px solid rgba(255, 255, 255, 0.25)',
@@ -115,8 +127,10 @@ const MobileControls: React.FC<MobileControlsProps> = ({
             onMouseDown={() => handleTouchStart('down')}
             onMouseUp={() => handleTouchEnd('down')}
             onMouseLeave={() => handleTouchEnd('down')}
-            className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center transition-all active:scale-90 select-none"
+            className="absolute bottom-0 left-1/2 transform -translate-x-1/2 rounded-lg flex items-center justify-center transition-all active:scale-90 select-none"
             style={{
+              width: '3rem',
+              height: '3rem',
               backgroundColor: 'rgba(255, 255, 255, 0.15)',
               backdropFilter: 'blur(1px)',
               border: '2px solid rgba(255, 255, 255, 0.25)',
@@ -146,8 +160,10 @@ const MobileControls: React.FC<MobileControlsProps> = ({
             onMouseDown={() => handleTouchStart('left')}
             onMouseUp={() => handleTouchEnd('left')}
             onMouseLeave={() => handleTouchEnd('left')}
-            className="absolute left-0 top-1/2 transform -translate-y-1/2 w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center transition-all active:scale-90 select-none"
+            className="absolute left-0 top-1/2 transform -translate-y-1/2 rounded-lg flex items-center justify-center transition-all active:scale-90 select-none"
             style={{
+              width: '3rem',
+              height: '3rem',
               backgroundColor: 'rgba(255, 255, 255, 0.15)',
               backdropFilter: 'blur(1px)',
               border: '2px solid rgba(255, 255, 255, 0.25)',
@@ -177,8 +193,10 @@ const MobileControls: React.FC<MobileControlsProps> = ({
             onMouseDown={() => handleTouchStart('right')}
             onMouseUp={() => handleTouchEnd('right')}
             onMouseLeave={() => handleTouchEnd('right')}
-            className="absolute right-0 top-1/2 transform -translate-y-1/2 w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center transition-all active:scale-90 select-none"
+            className="absolute right-0 top-1/2 transform -translate-y-1/2 rounded-lg flex items-center justify-center transition-all active:scale-90 select-none"
             style={{
+              width: '3rem',
+              height: '3rem',
               backgroundColor: 'rgba(255, 255, 255, 0.15)',
               backdropFilter: 'blur(1px)',
               border: '2px solid rgba(255, 255, 255, 0.25)',
@@ -190,50 +208,61 @@ const MobileControls: React.FC<MobileControlsProps> = ({
         </div>
       </div>
 
-      {/* Action Buttons - Bottom Right */}
-      <div 
-        className="fixed z-40 md:hidden flex gap-3"
+      {/* Pokedex Button - Bottom Left (rotated 90deg clockwise) */}
+      <button
+        onClick={onOpenPokedex}
+        className="fixed z-50 md:hidden rounded-full flex items-center justify-center transition-all active:scale-90 shadow-lg select-none overflow-hidden"
         style={{
-          flexDirection: isLandscape ? 'row' : 'column',
-          bottom: isLandscape ? '50%' : '1rem',
-          right: isLandscape ? '1rem' : '1rem',
-          transform: isLandscape ? 'translateY(50%) rotate(-90deg)' : 'none',
-          transformOrigin: isLandscape ? 'center center' : 'none',
+          width: '3rem',
+          height: '3rem',
+          bottom: '1rem',
+          left: '1rem',
+          transform: 'rotate(90deg)',
+          transformOrigin: 'center center',
+          backgroundColor: 'rgba(59, 130, 246, 0.85)',
+          backdropFilter: 'blur(10px)',
+          border: '2px solid rgba(255, 255, 255, 0.4)',
+          color: 'var(--text-inverse)',
         }}
+        aria-label={isPokedexOpen ? 'Close Pokedex' : 'Open Pokedex'}
       >
-        {/* Pokedex Button */}
-        <button
-          onClick={onOpenPokedex}
-          className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-lg select-none"
+        <Image 
+          src={pokedexImage}
+          alt="Pokedex" 
+          width={48}
+          height={48}
           style={{
-            backgroundColor: 'rgba(59, 130, 246, 0.85)',
-            backdropFilter: 'blur(10px)',
-            border: '2px solid rgba(255, 255, 255, 0.4)',
-            color: 'var(--text-inverse)',
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
           }}
-          aria-label={isPokedexOpen ? 'Close Pokedex' : 'Open Pokedex'}
-        >
-          <span className="text-xl sm:text-2xl">📖</span>
-        </button>
+        />
+      </button>
 
-        {/* Tooltip Button */}
-        <button
-          onClick={onToggleTooltip}
-          className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-lg select-none"
-          style={{
-            backgroundColor: 'rgba(16, 185, 129, 0.85)',
-            backdropFilter: 'blur(10px)',
-            border: '2px solid rgba(255, 255, 255, 0.4)',
-            color: 'var(--text-inverse)',
-          }}
-          aria-label="Game Information"
-        >
-          <span className="text-xl sm:text-2xl">ℹ️</span>
-        </button>
-      </div>
+      {/* Tooltip Button - Bottom Right (rotated 90deg clockwise) */}
+      <button
+        onClick={onToggleTooltip}
+        className="fixed z-50 md:hidden rounded-full flex items-center justify-center transition-all active:scale-90 shadow-lg select-none"
+        style={{
+          width: '3rem',
+          height: '3rem',
+          bottom: '1rem',
+          right: '1rem',
+          transform: 'rotate(90deg)',
+          transformOrigin: 'center center',
+          backgroundColor: 'rgba(16, 185, 129, 0.85)',
+          backdropFilter: 'blur(10px)',
+          border: '2px solid rgba(255, 255, 255, 0.4)',
+          color: 'var(--text-inverse)',
+        }}
+        aria-label="Game Information"
+      >
+        <span className="text-xl sm:text-2xl">ℹ️</span>
+      </button>
     </>
   );
 };
 
 export default MobileControls;
+
 
