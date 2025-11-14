@@ -211,7 +211,7 @@ const MobileControls: React.FC<MobileControlsProps> = ({
       {/* Pokedex Button - Bottom Left (rotated 90deg clockwise) */}
       <button
         onClick={onOpenPokedex}
-        className="fixed z-50 md:hidden rounded-full flex items-center justify-center transition-all active:scale-90 shadow-lg select-none overflow-hidden"
+        className="fixed md:hidden rounded-full flex items-center justify-center transition-all active:scale-90 shadow-lg select-none overflow-hidden"
         style={{
           width: '3rem',
           height: '3rem',
@@ -223,6 +223,7 @@ const MobileControls: React.FC<MobileControlsProps> = ({
           backdropFilter: 'blur(10px)',
           border: '2px solid rgba(255, 255, 255, 0.4)',
           color: 'var(--text-inverse)',
+          zIndex: isPokedexOpen ? 60 : 50, // Higher z-index when pokedex is open so it stays clickable
         }}
         aria-label={isPokedexOpen ? 'Close Pokedex' : 'Open Pokedex'}
       >
