@@ -6,11 +6,13 @@ import {
   Body,
   Param,
   Put,
+  UseGuards,
 } from '@nestjs/common';
 import { PlayerService } from './player.service';
 import { Prisma } from '@prisma/client';
-import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { CreatePlayerDto } from '../dto/create-player.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('players') // Groups endpoints under the "players" tag
 @Controller('players')
@@ -27,6 +29,8 @@ export class PlayerController {
 
   // Get all players
   @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all players' }) // Endpoint description
   async findAllPlayers() {
     return this.playerService.findAllPlayers();
@@ -35,6 +39,8 @@ export class PlayerController {
   // Update player Pokedex (add or remove Pokemon)
   // IMPORTANT: More specific routes must come BEFORE generic routes
   @Put(':id/pokedex')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Update player Pokedex' }) // Endpoint description
   @ApiParam({ name: 'id', required: true, description: 'ID of the player' }) // Route parameter
   @ApiBody({
@@ -71,6 +77,8 @@ export class PlayerController {
   // Update player pokeballs and berries
   // IMPORTANT: More specific routes must come BEFORE generic routes
   @Put(':id/resources')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Update player resources (pokeballs and berries)' })
   @ApiParam({ name: 'id', required: true, description: 'ID of the player' })
   @ApiBody({
@@ -98,6 +106,8 @@ export class PlayerController {
 
   // Get a player by ID
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get a player by ID' })
   @ApiParam({ name: 'id', required: true, description: 'ID of the player' })
   async findPlayerById(@Param('id') playerId: string) {
@@ -106,6 +116,8 @@ export class PlayerController {
 
   // Delete a player
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a player' }) // Endpoint description
   @ApiParam({ name: 'id', required: true, description: 'ID of the player' }) // Route parameter
   async deletePlayer(@Param('id') playerId: string) {
