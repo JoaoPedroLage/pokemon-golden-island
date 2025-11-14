@@ -44,15 +44,61 @@ const Game: React.FC = () => {
   const [isDesktop, setIsDesktop] = useState(false); // State to track if device is desktop/notebook
   const [isMobileDevice, setIsMobileDevice] = useState(false); // State to track if device is mobile
   const [viewMode, setViewMode] = useState<'full' | 'fog'>('fog'); // View mode: 'full' for full map, 'fog' for fog of war
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // State to track authentication status
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true); // State to track if we're checking authentication
 
   const revealedAreasRef = useRef<Set<string>>(new Set()); // Track revealed areas in fog of war mode
   const cameraRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 }); // Camera position
 
   // Check authentication on load
   useEffect(() => {
-    if (!authAPI.isAuthenticated()) {
-      router.push('/');
-    }
+    const checkAuth = async () => {
+      setIsCheckingAuth(true);
+      
+      // Check if token exists
+      if (!authAPI.isAuthenticated()) {
+        setIsAuthenticated(false);
+        setIsCheckingAuth(false);
+        router.push('/');
+        return;
+      }
+
+      // Validate token by making a request to the backend
+      const token = authAPI.getToken();
+      if (token) {
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/players`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+
+          if (response.ok) {
+            // Valid token, allow access
+            setIsAuthenticated(true);
+          } else {
+            // Invalid token, clear and redirect
+            authAPI.logout();
+            setIsAuthenticated(false);
+            router.push('/');
+          }
+        } catch (error) {
+          // Error validating token, clear and redirect
+          console.error('Error validating token:', error);
+          authAPI.logout();
+          setIsAuthenticated(false);
+          router.push('/');
+        }
+      } else {
+        // No token, redirect
+        setIsAuthenticated(false);
+        router.push('/');
+      }
+
+      setIsCheckingAuth(false);
+    };
+
+    checkAuth();
   }, [router]);
 
   // Function to start the animation
@@ -653,6 +699,71 @@ const Game: React.FC = () => {
       }
     };
   }, [inBattle, initialPlayerPosition, showPokedex, startAnimation, wasInBattle]);
+
+  // Show loading screen while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{ backgroundColor: 'var(--bg-secondary)' }}
+      >
+        <div
+          className="text-center"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          <div className="text-lg">Verifying authentication...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show authentication required message if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{ backgroundColor: 'var(--bg-secondary)' }}
+      >
+        <div
+          className="text-center max-w-md mx-auto p-8 rounded-lg shadow-lg"
+          style={{
+            backgroundColor: 'var(--bg-primary)',
+            border: '2px solid var(--border-medium)',
+          }}
+        >
+          <div
+            className="text-6xl mb-4"
+            style={{ opacity: 0.8 }}
+          >
+            🔒
+          </div>
+          <h1
+            className="text-2xl font-bold mb-4"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            Authentication Required
+          </h1>
+          <p
+            className="text-base mb-6"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            You need to be logged in to access the game. Please log in to continue.
+          </p>
+          <button
+            onClick={() => router.push('/')}
+            className="px-6 py-3 rounded-lg transition-all hover:opacity-90 font-medium"
+            style={{
+              backgroundColor: 'var(--primary)',
+              color: 'var(--text-inverse)',
+              border: '2px solid var(--border-medium)',
+            }}
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
