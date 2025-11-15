@@ -56,7 +56,7 @@ const Game: React.FC = () => {
       setIsCheckingAuth(true);
       
       // Check if token exists
-      if (!authAPI.isAuthenticated()) {
+    if (!authAPI.isAuthenticated()) {
         setIsAuthenticated(false);
         setIsCheckingAuth(false);
         router.push('/login');
@@ -898,38 +898,35 @@ const Game: React.FC = () => {
                       }}
                     />
                   </div>
-                  {/* Game Info Tooltip - inside the map area - only show when not in battle */}
-                  {!inBattle && <GameInfoTooltip isOpen={showTooltip} onClose={() => setShowTooltip(false)} />}
-
                   {/* View Mode Toggle Button - top left on desktop, top right on mobile - only show when not in battle */}
                   {!inBattle && (
-                    <button
-                      onClick={() => {
-                        const newMode = viewMode === 'full' ? 'fog' : 'full';
-                        setViewMode(newMode);
-                        // Clear revealed areas when switching to fog mode
-                        if (newMode === 'fog') {
-                          revealedAreasRef.current.clear();
-                        }
-                      }}
-                      className="fixed z-50 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-lg"
-                      style={{
-                        width: '3rem',
-                        height: '3rem',
-                        top: '1rem',
-                        left: isMobileDevice ? 'auto' : '1rem',
-                        right: isMobileDevice ? '1rem' : 'auto',
-                        backgroundColor: viewMode === 'fog' ? 'var(--primary)' : 'var(--success)',
-                        color: 'var(--text-inverse)',
-                        border: '2px solid var(--border-medium)',
-                        zIndex: 100,
-                        transform: isMobileDevice ? 'rotate(90deg)' : 'none',
-                      }}
-                      aria-label={viewMode === 'fog' ? 'Switch to full map view' : 'Switch to fog of war view'}
-                      title={viewMode === 'fog' ? 'Show full map' : 'Show fog of war'}
-                    >
-                      <span style={{ fontSize: '1.5rem' }}>{viewMode === 'fog' ? '🗺️' : '👁️'}</span>
-                    </button>
+                  <button
+                    onClick={() => {
+                      const newMode = viewMode === 'full' ? 'fog' : 'full';
+                      setViewMode(newMode);
+                      // Clear revealed areas when switching to fog mode
+                      if (newMode === 'fog') {
+                        revealedAreasRef.current.clear();
+                      }
+                    }}
+                    className="fixed z-50 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-lg"
+                    style={{
+                      width: '3rem',
+                      height: '3rem',
+                      top: '1rem',
+                      left: isMobileDevice ? 'auto' : '1rem',
+                      right: isMobileDevice ? '1rem' : 'auto',
+                      backgroundColor: viewMode === 'fog' ? 'var(--primary)' : 'var(--success)',
+                      color: 'var(--text-inverse)',
+                      border: '2px solid var(--border-medium)',
+                      zIndex: 100,
+                      transform: isMobileDevice ? 'rotate(90deg)' : 'none',
+                    }}
+                    aria-label={viewMode === 'fog' ? 'Switch to full map view' : 'Switch to fog of war view'}
+                    title={viewMode === 'fog' ? 'Show full map' : 'Show fog of war'}
+                  >
+                    <span style={{ fontSize: '1.5rem' }}>{viewMode === 'fog' ? '🗺️' : '👁️'}</span>
+                  </button>
                   )}
                 </div>
               </>
@@ -1004,6 +1001,9 @@ const Game: React.FC = () => {
               isPokedexOpen={showPokedex}
             />
           )}
+
+          {/* Game Info Tooltip - outside map container, rendered after MobileControls to ensure it's on top - only show when not in battle */}
+          {!inBattle && <GameInfoTooltip isOpen={showTooltip} onClose={() => setShowTooltip(false)} onToggle={() => setShowTooltip(!showTooltip)} />}
 
           {/* Message to press Enter - desktop only */}
           {!showPokedex && (

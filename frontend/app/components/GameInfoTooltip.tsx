@@ -5,9 +5,10 @@ import React, { useState, useEffect } from 'react';
 interface GameInfoTooltipProps {
   isOpen?: boolean;
   onClose?: () => void;
+  onToggle?: () => void;
 }
 
-const GameInfoTooltip: React.FC<GameInfoTooltipProps> = ({ isOpen: externalIsOpen, onClose }) => {
+const GameInfoTooltip: React.FC<GameInfoTooltipProps> = ({ isOpen: externalIsOpen, onClose, onToggle }) => {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [language, setLanguage] = useState<'en' | 'pt'>('en');
   const [isMobile, setIsMobile] = useState(false);
@@ -20,10 +21,29 @@ const GameInfoTooltip: React.FC<GameInfoTooltipProps> = ({ isOpen: externalIsOpe
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Sync internal state with external state when it changes
+  useEffect(() => {
+    if (externalIsOpen !== undefined) {
+      setInternalIsOpen(externalIsOpen);
+    }
+  }, [externalIsOpen]);
   
-  // Function to toggle tooltip state (always uses internal state for button)
+  // Function to toggle tooltip state
+  // If externally controlled and onToggle is provided, use it; otherwise use internal state
   const toggleTooltip = () => {
-    setInternalIsOpen(!internalIsOpen);
+    if (externalIsOpen !== undefined && onToggle) {
+      // Externally controlled with toggle function - use it
+      // Update internal state immediately for instant visual feedback
+      setInternalIsOpen(!externalIsOpen);
+      onToggle();
+    } else if (externalIsOpen !== undefined) {
+      // Externally controlled but no toggle - use internal state as fallback
+      setInternalIsOpen(!internalIsOpen);
+    } else {
+      // Internally controlled
+      setInternalIsOpen(!internalIsOpen);
+    }
   };
   
   // If state is externally controlled, show when external OR internal is open
@@ -100,7 +120,15 @@ const GameInfoTooltip: React.FC<GameInfoTooltipProps> = ({ isOpen: externalIsOpe
   const currentContent = content[language];
 
   return (
-    <div className="absolute top-4 right-4 z-50">
+    <div 
+      className="fixed"
+      style={{ 
+        zIndex: isMobile ? 1000 : 100,
+        top: isMobile ? undefined : '1rem',
+        right: isMobile ? undefined : '1rem',
+        position: 'fixed',
+      }}
+    >
       {/* Info Button - desktop only */}
       <button
         onClick={toggleTooltip}
@@ -118,17 +146,20 @@ const GameInfoTooltip: React.FC<GameInfoTooltipProps> = ({ isOpen: externalIsOpe
       {/* Tooltip Content */}
       {displayIsOpen && (
         <div
-          className="fixed md:absolute top-16 right-4 md:right-0 rounded-lg shadow-2xl"
+          className="fixed"
           style={{
             backgroundColor: 'var(--bg-primary)',
             border: '2px solid var(--border-medium)',
             color: 'var(--text-primary)',
-            zIndex: isMobile ? 100 : 60, // Higher z-index on mobile to be above all buttons (MobileControls: 50-60, Pokedex: 50)
+            zIndex: isMobile ? 1001 : 101, // Very high z-index on mobile to be above all buttons (MobileControls: 50, Pokedex: 50, BattleScene: 1001). Desktop: above view mode button (100)
             transform: isMobile ? 'translate(-50%, -50%) rotate(90deg)' : 'none',
             transformOrigin: isMobile ? 'center center' : 'top right',
-            top: isMobile ? '50%' : undefined,
-            left: isMobile ? '50%' : undefined,
-            right: isMobile ? 'auto' : undefined,
+            top: isMobile ? '50%' : '4rem',
+            left: isMobile ? '50%' : 'auto',
+            right: isMobile ? 'auto' : '1rem',
+            position: 'fixed',
+            borderRadius: '0.5rem',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
             boxSizing: 'border-box',
             // On mobile with 90deg rotation: width becomes height, height becomes width
             // iPhone SE: 375x667 (portrait) or 667x375 (landscape)
@@ -141,7 +172,6 @@ const GameInfoTooltip: React.FC<GameInfoTooltipProps> = ({ isOpen: externalIsOpe
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            position: 'fixed',
             padding: 0,
             margin: 0,
             contain: 'layout style size', // CSS containment to prevent overflow

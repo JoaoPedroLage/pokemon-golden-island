@@ -12,15 +12,15 @@ export default function Home() {
   }, [router]);
 
   // Show loading while redirecting
-  return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{ backgroundColor: 'var(--bg-secondary)' }}
-    >
+    return (
       <div
-        className="text-center"
-        style={{ color: 'var(--text-primary)' }}
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{ backgroundColor: 'var(--bg-secondary)' }}
       >
+        <div
+          className="text-center"
+          style={{ color: 'var(--text-primary)' }}
+        >
         <div className="text-lg">Redirecting to login...</div>
       </div>
     </div>
