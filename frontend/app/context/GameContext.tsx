@@ -113,6 +113,7 @@ const clearSessionStorage = (playerId: number | null = null) => {
 
 // Context provider to be used in the app
 export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // Initialize with default values - will be overwritten by loadPlayer if account has saved data
   const [pokeballs, setPokeballs] = useState<number>(30);
   const [berries, setBerries] = useState<number>(5);
   const [capturedPokemons, setCapturedPokemons] = useState<Pokemon[]>([]);
@@ -202,16 +203,34 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.log(`Loading player data for ID: ${id}`);
       // ALWAYS load from backend first to ensure updated data
       const player = await playerAPI.getById(id);
+      
+      const pokemonCount = player.pokedex?.capturedPokemons?.length || 0;
+      const hasSavedPokemons = pokemonCount > 0;
+      
       console.log('Player data loaded from backend:', {
         id: player.id,
         pokeballs: player.pokeballs,
         berries: player.berries,
-        pokemonCount: player.pokedex?.capturedPokemons?.length || 0,
+        pokemonCount: pokemonCount,
+        hasSavedPokemons: hasSavedPokemons,
       });
       
       setPlayerId(player.id);
-      setPokeballs(player.pokeballs);
-      setBerries(player.berries);
+      
+      // If player has saved pokemons, use data from backend
+      // Otherwise, use default values (30 pokeballs, 5 berries) for new accounts
+      if (hasSavedPokemons) {
+        // Account with saved data - load from backend
+        console.log('Account has saved pokemons - loading data from backend');
+        setPokeballs(player.pokeballs);
+        setBerries(player.berries);
+      } else {
+        // New account - use default values
+        console.log('New account detected - using default values (30 pokeballs, 5 berries)');
+        setPokeballs(30);
+        setBerries(5);
+      }
+      
       setTotalPokemons(player.pokedex?.totalPokemons || 151);
 
       // Load Pokemon from backend
