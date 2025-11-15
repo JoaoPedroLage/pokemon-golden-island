@@ -223,7 +223,7 @@ const MobileControls: React.FC<MobileControlsProps> = ({
           backdropFilter: 'blur(10px)',
           border: '2px solid rgba(255, 255, 255, 0.4)',
           color: 'var(--text-inverse)',
-          zIndex: isPokedexOpen ? 60 : 50, // Higher z-index when pokedex is open so it stays clickable
+          zIndex: isPokedexOpen ? 10 : 50, // Normal z-index when pokedex is open (close button is inside modal)
         }}
         aria-label={isPokedexOpen ? 'Close Pokedex' : 'Open Pokedex'}
       >
