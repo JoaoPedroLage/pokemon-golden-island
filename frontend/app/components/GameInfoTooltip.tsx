@@ -174,6 +174,7 @@ const GameInfoTooltip: React.FC<GameInfoTooltipProps> = ({ isOpen: externalIsOpe
             flexDirection: 'column',
             padding: 0,
             margin: 0,
+            touchAction: 'none', // Prevent dragging the tooltip itself
           }}
         >
           {/* Scrollable Content Wrapper */}
@@ -187,6 +188,8 @@ const GameInfoTooltip: React.FC<GameInfoTooltipProps> = ({ isOpen: externalIsOpe
               padding: isMobile ? '0.75rem' : '1.5rem',
               boxSizing: 'border-box',
               width: '100%',
+              touchAction: 'pan-y', // Allow vertical scrolling with touch gestures
+              overscrollBehavior: 'contain', // Prevent scroll chaining
             }}
           >
             {/* Header */}
