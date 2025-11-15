@@ -59,7 +59,6 @@ const Game: React.FC = () => {
     if (!authAPI.isAuthenticated()) {
         setIsAuthenticated(false);
         setIsCheckingAuth(false);
-        router.push('/login');
         return;
       }
 
@@ -79,25 +78,22 @@ const Game: React.FC = () => {
             setIsCheckingAuth(false);
             setIsLoading(true); // Start loading images after authentication is validated
           } else {
-            // Invalid token, clear and redirect
+            // Invalid token, clear but don't redirect
             authAPI.logout();
             setIsAuthenticated(false);
             setIsCheckingAuth(false);
-            router.push('/login');
           }
         } catch (error) {
-          // Error validating token, clear and redirect
+          // Error validating token, clear but don't redirect
           console.error('Error validating token:', error);
           authAPI.logout();
           setIsAuthenticated(false);
           setIsCheckingAuth(false);
-          router.push('/login');
         }
       } else {
-        // No token, redirect
+        // No token
         setIsAuthenticated(false);
         setIsCheckingAuth(false);
-        router.push('/login');
       }
     };
 
@@ -747,7 +743,7 @@ const Game: React.FC = () => {
             className="text-2xl font-bold mb-4"
             style={{ color: 'var(--text-primary)' }}
           >
-            Authentication Required
+            You are not authenticated
           </h1>
           <p
             className="text-base mb-6"
@@ -794,6 +790,7 @@ const Game: React.FC = () => {
           {
             inBattle ? (
               // Render battle scene if inBattle state is true
+              // Rotate to landscape mode on mobile (cellphone lying down)
               <div
                 style={{
                   position: 'fixed',
@@ -808,6 +805,7 @@ const Game: React.FC = () => {
                   transformOrigin: 'center center',
                   zIndex: 1000, // Higher than MobileControls (50), Pokedex (50), and other elements
                   backgroundColor: 'var(--bg-secondary)',
+                  overflow: 'hidden',
                 }}
               >
                 <BattleScene endBattle={endBattle} childPokedex={childPokedex} />
