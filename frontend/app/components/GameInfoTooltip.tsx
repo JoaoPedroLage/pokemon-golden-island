@@ -123,7 +123,7 @@ const GameInfoTooltip: React.FC<GameInfoTooltipProps> = ({ isOpen: externalIsOpe
             backgroundColor: 'var(--bg-primary)',
             border: '2px solid var(--border-medium)',
             color: 'var(--text-primary)',
-            zIndex: 60,
+            zIndex: isMobile ? 100 : 60, // Higher z-index on mobile to be above all buttons (MobileControls: 50-60, Pokedex: 50)
             transform: isMobile ? 'translate(-50%, -50%) rotate(90deg)' : 'none',
             transformOrigin: isMobile ? 'center center' : 'top right',
             top: isMobile ? '50%' : undefined,
