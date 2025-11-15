@@ -146,14 +146,20 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     fetchTotalPokemons();
   }, []);
 
-  // Load player from localStorage on startup
+  // Load player from localStorage on startup (only if not already loading from login)
   useEffect(() => {
-    const savedPlayerId = localStorage.getItem('playerId');
-    if (savedPlayerId) {
-      loadPlayer(Number(savedPlayerId)).catch((error) => {
-        console.error('Error loading player:', error);
-      });
-    }
+    // Small delay to ensure login process completes first
+    const timer = setTimeout(() => {
+      const savedPlayerId = localStorage.getItem('playerId');
+      if (savedPlayerId && !playerId && !isLoading) {
+        console.log('Loading player from localStorage on startup:', savedPlayerId);
+        loadPlayer(Number(savedPlayerId)).catch((error) => {
+          console.error('Error loading player:', error);
+        });
+      }
+    }, 100);
+    
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -193,8 +199,16 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const loadPlayer = async (id: number) => {
     setIsLoading(true);
     try {
+      console.log(`Loading player data for ID: ${id}`);
       // ALWAYS load from backend first to ensure updated data
       const player = await playerAPI.getById(id);
+      console.log('Player data loaded from backend:', {
+        id: player.id,
+        pokeballs: player.pokeballs,
+        berries: player.berries,
+        pokemonCount: player.pokedex?.capturedPokemons?.length || 0,
+      });
+      
       setPlayerId(player.id);
       setPokeballs(player.pokeballs);
       setBerries(player.berries);
@@ -208,6 +222,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         quantity: p.quantity || 1,
       })) || [];
 
+      console.log(`Loaded ${backendPokemons.length} Pokemon from backend`);
+
       // Set backend Pokemon in state
       setCapturedPokemons(backendPokemons);
 
@@ -215,6 +231,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       saveToSessionStorage(backendPokemons, player.id);
 
       localStorage.setItem('playerId', player.id.toString());
+      console.log('Player data loaded successfully');
     } catch (error) {
       console.error('Error loading player:', error);
       // If player doesn't exist, clear localStorage
@@ -276,75 +293,69 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       throw new Error('Player not initialized');
     }
 
-    if (capturedPokemons.length === 0) {
-      console.log('No Pokemon to save');
-      showToast(
-        'No Pokemon captured to save.',
-        'info',
-        3000
-      );
-      return;
-    }
-
     setIsSaving(true);
     try {
-      // Fetch current Pokemon from backend to compare
-      const currentPlayer = await playerAPI.getById(playerId);
-      const backendPokemons = currentPlayer.pokedex?.capturedPokemons || [];
-
-      // For each local Pokemon, synchronize with backend using 'set' to define exact quantity
-      for (const pokemon of capturedPokemons) {
-        // Convert type to string if it's an array
-        const pokemonType = Array.isArray(pokemon.type)
-          ? pokemon.type.join(', ')
-          : pokemon.type;
-
-        const pokemonData: PokemonData = {
-          name: pokemon.name,
-          sprite: pokemon.sprite,
-          type: pokemonType,
-          quantity: pokemon.quantity || 1,
-        };
-
-        try {
-          // Use 'set' to define exact quantity instead of incrementing
-          await playerAPI.updatePokedex(
-            playerId,
-            pokemonData,
-            'set'
-          );
-        } catch (error) {
-          console.error(`Error saving ${pokemon.name} to backend:`, error);
-          // Continue trying to save other Pokemon
-        }
-      }
-
-      // Remove Pokemon that are in backend but no longer in local list
-      for (const backendPokemon of backendPokemons) {
-        const existsLocally = capturedPokemons.some(
-          (p) => p.name === backendPokemon.name
-        );
-
-        if (!existsLocally) {
-          try {
-            // Remove the Pokemon that is no longer in local list
-            await playerAPI.updatePokedex(
-              playerId,
-              backendPokemon,
-              'remove'
-            );
-          } catch (error) {
-            console.error(`Error removing ${backendPokemon.name} from backend:`, error);
-          }
-        }
-      }
-
-      // Save pokeballs and berries to backend
+      // ALWAYS save pokeballs and berries first, regardless of Pokemon count
       try {
         await playerAPI.updateResources(playerId, pokeballs, berries);
+        console.log(`Saved resources: ${pokeballs} pokeballs, ${berries} berries`);
       } catch (error) {
         console.error('Error saving pokeballs and berries:', error);
-        // Don't interrupt the process if it fails, just log the error
+        throw error; // Throw error if resources fail to save
+      }
+
+      // Only sync Pokemon if there are any
+      if (capturedPokemons.length > 0) {
+        // Fetch current Pokemon from backend to compare
+        const currentPlayer = await playerAPI.getById(playerId);
+        const backendPokemons = currentPlayer.pokedex?.capturedPokemons || [];
+
+        // For each local Pokemon, synchronize with backend using 'set' to define exact quantity
+        for (const pokemon of capturedPokemons) {
+          // Convert type to string if it's an array
+          const pokemonType = Array.isArray(pokemon.type)
+            ? pokemon.type.join(', ')
+            : pokemon.type;
+
+          const pokemonData: PokemonData = {
+            name: pokemon.name,
+            sprite: pokemon.sprite,
+            type: pokemonType,
+            quantity: pokemon.quantity || 1,
+          };
+
+          try {
+            // Use 'set' to define exact quantity instead of incrementing
+            await playerAPI.updatePokedex(
+              playerId,
+              pokemonData,
+              'set'
+            );
+          } catch (error) {
+            console.error(`Error saving ${pokemon.name} to backend:`, error);
+            // Continue trying to save other Pokemon
+          }
+        }
+
+        // Remove Pokemon that are in backend but no longer in local list
+        for (const backendPokemon of backendPokemons) {
+          const existsLocally = capturedPokemons.some(
+            (p) => p.name === backendPokemon.name
+          );
+
+          if (!existsLocally) {
+            try {
+              // Remove the Pokemon that is no longer in local list
+              await playerAPI.updatePokedex(
+                playerId,
+                backendPokemon,
+                'remove'
+              );
+            } catch (error) {
+              console.error(`Error removing ${backendPokemon.name} from backend:`, error);
+            }
+          }
+        }
       }
 
       // Keep local data after saving (don't reload from backend)
@@ -353,9 +364,13 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // sessionStorage is already updated by the functions that modify Pokemon
 
       // Show success toast
-      const totalSaved = capturedPokemons.length;
+      const pokemonCount = capturedPokemons.length;
+      const message = pokemonCount > 0
+        ? `Data saved successfully! ${pokemonCount} ${pokemonCount === 1 ? 'Pokemon was' : 'Pokemon were'} synchronized, and resources updated on the server.`
+        : `Resources saved successfully! ${pokeballs} pokeballs and ${berries} berries updated on the server.`;
+      
       showToast(
-        `Data saved successfully! ${totalSaved} ${totalSaved === 1 ? 'Pokemon was' : 'Pokemon were'} synchronized on the server.`,
+        message,
         'success',
         5000
       );

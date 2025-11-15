@@ -332,7 +332,7 @@ const Pokedex: React.FC = () => {
           <div className="flex items-center gap-2 md:gap-3">
             <button
               onClick={handleSave}
-              disabled={isSaving || !playerId || capturedPokemons.length === 0}
+              disabled={isSaving || !playerId}
               className="px-3 py-1.5 md:px-6 md:py-2 rounded-lg transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm md:text-base"
               style={{
                 backgroundColor: isSaving
