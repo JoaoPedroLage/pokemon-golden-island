@@ -47,9 +47,16 @@ export class AuthService {
     const player = await this.playerService.createPlayer(name);
     
     // Associate player with user
-    await this.prisma.player.update({
+    const updatedPlayer = await this.prisma.player.update({
       where: { id: player.id },
       data: { userId: user.id },
+      include: {
+        pokedex: {
+          include: {
+            capturedPokemons: true,
+          },
+        },
+      },
     });
 
     // Generate JWT token
@@ -64,8 +71,24 @@ export class AuthService {
         name: user.name,
       },
       player: {
-        id: player.id,
-        name: player.name,
+        id: updatedPlayer.id,
+        name: updatedPlayer.name,
+        pokeballs: updatedPlayer.pokeballs,
+        berries: updatedPlayer.berries,
+        pokedex: updatedPlayer.pokedex
+          ? {
+              id: updatedPlayer.pokedex.id,
+              totalPokemons: updatedPlayer.pokedex.totalPokemons,
+              totalCaptured: updatedPlayer.pokedex.totalCaptured,
+              capturedPokemons: updatedPlayer.pokedex.capturedPokemons.map((p) => ({
+                id: p.id,
+                name: p.name,
+                sprite: p.sprite,
+                type: p.type,
+                quantity: p.quantity,
+              })),
+            }
+          : null,
       },
     };
   }
@@ -73,10 +96,20 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
 
-    // Find user
+    // Find user with player and pokedex data
     const user = await this.prisma.user.findUnique({
       where: { email },
-      include: { player: true },
+      include: { 
+        player: {
+          include: {
+            pokedex: {
+              include: {
+                capturedPokemons: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!user) {
@@ -105,6 +138,22 @@ export class AuthService {
         ? {
             id: user.player.id,
             name: user.player.name,
+            pokeballs: user.player.pokeballs,
+            berries: user.player.berries,
+            pokedex: user.player.pokedex
+              ? {
+                  id: user.player.pokedex.id,
+                  totalPokemons: user.player.pokedex.totalPokemons,
+                  totalCaptured: user.player.pokedex.totalCaptured,
+                  capturedPokemons: user.player.pokedex.capturedPokemons.map((p) => ({
+                    id: p.id,
+                    name: p.name,
+                    sprite: p.sprite,
+                    type: p.type,
+                    quantity: p.quantity,
+                  })),
+                }
+              : null,
           }
         : null,
     };

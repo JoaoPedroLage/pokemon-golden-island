@@ -4,7 +4,28 @@ import React, { useState } from 'react';
 import { authAPI } from '../services/api';
 
 interface RegisterProps {
-  onSuccess: (token: string, user: { id: number; email: string; name: string }, player: { id: number; name: string } | null) => void;
+  onSuccess: (
+    token: string,
+    user: { id: number; email: string; name: string },
+    player: {
+      id: number;
+      name: string;
+      pokeballs?: number;
+      berries?: number;
+      pokedex?: {
+        id: number;
+        totalPokemons: number;
+        totalCaptured: number;
+        capturedPokemons: Array<{
+          id: number;
+          name: string;
+          sprite: string;
+          type: string;
+          quantity: number;
+        }>;
+      } | null;
+    } | null
+  ) => void;
   onSwitchToLogin: () => void;
 }
 

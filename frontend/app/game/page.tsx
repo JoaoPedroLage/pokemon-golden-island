@@ -1004,16 +1004,18 @@ const Game: React.FC = () => {
           {!inBattle && <GameInfoTooltip isOpen={showTooltip} onClose={() => setShowTooltip(false)} onToggle={() => setShowTooltip(!showTooltip)} />}
 
           {/* Message to press Enter - desktop only */}
-          {!showPokedex && (
+          {!showPokedex && !inBattle && (
             <div
-              className="absolute bottom-10 text-center w-full hidden md:block"
+              className="fixed bottom-10 text-center w-full hidden md:block"
               style={{
-                color: 'var(--text)',
+                color: 'var(--text-primary)',
                 fontSize: '1.25rem',
-                textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
+                textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)',
+                zIndex: 100,
+                pointerEvents: 'none',
               }}
             >
-              Press <span className="font-bold">Enter</span> to open the Pokédex
+              Press <span className="font-bold" style={{ color: 'var(--primary)' }}>Enter</span> to open the Pokédex
             </div>
           )}
 

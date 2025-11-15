@@ -24,6 +24,20 @@ export interface AuthResponse {
   player: {
     id: number;
     name: string;
+    pokeballs?: number;
+    berries?: number;
+    pokedex?: {
+      id: number;
+      totalPokemons: number;
+      totalCaptured: number;
+      capturedPokemons: Array<{
+        id: number;
+        name: string;
+        sprite: string;
+        type: string;
+        quantity: number;
+      }>;
+    } | null;
   } | null;
 }
 

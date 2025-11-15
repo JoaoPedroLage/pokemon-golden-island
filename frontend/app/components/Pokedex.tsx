@@ -70,13 +70,13 @@ const Pokedex: React.FC = () => {
       <div
         className="rounded-lg shadow-2xl flex flex-col overflow-hidden"
         style={{
-          // Similar to tooltip: use translate and rotate for mobile, dimensions swapped
-          transform: isMobile ? 'translate(-50%, -50%) rotate(90deg)' : 'none',
-          transformOrigin: isMobile ? 'center center' : 'center center',
+          // Mobile: rotate and center, Desktop: just center
+          transform: isMobile ? 'translate(-50%, -50%) rotate(90deg)' : 'translate(-50%, -50%)',
+          transformOrigin: 'center center',
           position: 'fixed',
-          top: isMobile ? '50%' : '50%',
-          left: isMobile ? '50%' : '50%',
-          right: isMobile ? 'auto' : 'auto',
+          top: '50%',
+          left: '50%',
+          right: 'auto',
           // On mobile with 90deg rotation: width becomes height, height becomes width
           // Use vh for width and vw for height when rotated
           width: isMobile ? '90vh' : '80vw',
@@ -85,7 +85,7 @@ const Pokedex: React.FC = () => {
           maxHeight: isMobile ? '90vw' : 'calc(100vh - 4rem)',
           backgroundColor: 'var(--bg-primary)',
           border: '2px solid var(--border-medium)',
-          overflow: isMobile ? 'hidden' : 'hidden',
+          overflow: 'hidden',
           boxSizing: 'border-box',
           touchAction: 'none', // Prevent dragging the modal itself
         }}
