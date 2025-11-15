@@ -151,7 +151,7 @@ const GameInfoTooltip: React.FC<GameInfoTooltipProps> = ({ isOpen: externalIsOpe
             backgroundColor: 'var(--bg-primary)',
             border: '2px solid var(--border-medium)',
             color: 'var(--text-primary)',
-            zIndex: isMobile ? 1001 : 101, // Very high z-index on mobile to be above all buttons (MobileControls: 50, Pokedex: 50, BattleScene: 1001). Desktop: above view mode button (100)
+            zIndex: isMobile ? 1001 : 1002, // Very high z-index on mobile to be above all buttons (MobileControls: 50, Pokedex: 50, BattleScene: 1001). Desktop: above all game elements
             transform: isMobile ? 'translate(-50%, -50%) rotate(90deg)' : 'none',
             transformOrigin: isMobile ? 'center center' : 'top right',
             top: isMobile ? '50%' : '4rem',
@@ -165,16 +165,15 @@ const GameInfoTooltip: React.FC<GameInfoTooltipProps> = ({ isOpen: externalIsOpe
             // iPhone SE: 375x667 (portrait) or 667x375 (landscape)
             // After rotation: width (80vh) becomes height, height (80vw) becomes width
             // Using 80% to ensure it fits with border and padding
-            width: isMobile ? '80vh' : '20rem',
-            maxWidth: isMobile ? '80vh' : '20rem',
+            width: isMobile ? '80vh' : '22rem',
+            maxWidth: isMobile ? '80vh' : '22rem',
             height: isMobile ? '80vw' : 'auto',
-            maxHeight: isMobile ? '80vw' : '80vh',
-            overflow: 'hidden',
+            maxHeight: isMobile ? '80vw' : 'calc(100vh - 6rem)',
+            overflow: isMobile ? 'hidden' : 'auto',
             display: 'flex',
             flexDirection: 'column',
             padding: 0,
             margin: 0,
-            contain: 'layout style size', // CSS containment to prevent overflow
           }}
         >
           {/* Scrollable Content Wrapper */}
@@ -188,7 +187,6 @@ const GameInfoTooltip: React.FC<GameInfoTooltipProps> = ({ isOpen: externalIsOpe
               padding: isMobile ? '0.75rem' : '1.5rem',
               boxSizing: 'border-box',
               width: '100%',
-              height: '100%',
             }}
           >
             {/* Header */}
