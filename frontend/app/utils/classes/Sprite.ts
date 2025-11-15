@@ -26,7 +26,7 @@ export class Sprite {
     this.size = size;
     this.lastDirection = null; // Initialize last direction as null
     this.frameCount = 0; // Initialize frame counter
-    this.frameInterval = 100; // Time interval between frames (milliseconds)
+    this.frameInterval = 150; // Time interval between frames (milliseconds) - increased for better mobile performance
     this.lastFrameTime = 0; // Time of last frame update
     this.inBattle = false; // Initialize outside battle zone
   }
@@ -109,7 +109,10 @@ export class Sprite {
       y: this.position.y
     };
 
-    const movementSpeed = this.size / 50; // Adjust speed based on player size and canvas
+    // Calculate movement speed based on player size - proportional to cell size
+    // Use a base speed that scales with player size, ensuring smooth movement on all screen sizes
+    const baseSpeed = 2; // Base speed in pixels
+    const movementSpeed = Math.max(1, (this.size / 50) * baseSpeed); // Scale speed with player size, minimum 1px
 
     // Check which keys are pressed
     const upPressed = keys.w.pressed || keys.ArrowUp.pressed;
@@ -158,17 +161,21 @@ export class Sprite {
       this.image = this.sprites!.right;
     }
 
+    // Calculate scaled dimensions for collision detection (same as in draw method)
+    const { frameWidth: originalFrameWidth, frameHeight: originalFrameHeight } = this.getSpriteFrame();
+    const scale = this.size / 50; // Same scale factor used in draw method
+    const scaledWidth = originalFrameWidth * scale;
+    const scaledHeight = originalFrameHeight * scale;
 
     // Represent player as an object with position and dimensions for collision checking
-    const { frameWidth, frameHeight } = this.getSpriteFrame();
-
+    // Use SCALED dimensions, not original frame dimensions
     const playerRect = {
       position: {
         x: this.position.x,
         y: this.position.y
       },
-      width: frameWidth,
-      height: frameHeight,
+      width: scaledWidth,
+      height: scaledHeight,
     };
 
     // Check if there was a collision with any boundary
