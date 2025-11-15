@@ -2,6 +2,7 @@
   "name": "pokemon-golden-island",
   "version": "1.0.0",
   "description": "Pokemon Golden Island - Full Stack Application",
+  "license": "CC-BY-NC-SA-4.0",
   "private": true,
   "scripts": {
     "docker:setup": "cd backend && npm run docker:setup",

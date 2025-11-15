@@ -170,4 +170,14 @@ $ npm run test:cov
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+This project is licensed under the **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License (CC BY-NC-SA 4.0)**.
+
+This means:
+- ✅ **Free to use** for non-commercial purposes
+- ✅ **Free to modify** and distribute
+- ❌ **Cannot be used** for commercial purposes
+- ✅ **Must share alike** - derivative works must use the same license
+
+See the [LICENSE](LICENSE) file for full details, or visit [Creative Commons](https://creativecommons.org/licenses/by-nc-sa/4.0/) for more information.
+
+**Note:** This license applies to the Pokemon Golden Island project. Third-party dependencies (NestJS, Next.js, etc.) maintain their own licenses.
