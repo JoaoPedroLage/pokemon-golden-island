@@ -19,6 +19,8 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
   const [bonusCatchChance, setBonusCatchChance] = useState(0);
   const [showPokedex, setShowPokedex] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isMounted, setIsMounted] = useState(false); // For hydration handling
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 }); // For dynamic viewport dimensions
 
   const imageRefs = useRef<{ [key: string]: HTMLImageElement }>({});
 
@@ -143,21 +145,55 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
     }, 2000);
   };
 
-  // Detect if device is mobile
+  // Handle hydration and detect mobile device with multiple checks
   useEffect(() => {
-    const checkMobile = () => {
-      const isMobileDevice = window.innerWidth <= 768;
-      setIsMobile(isMobileDevice);
+    setIsMounted(true);
+
+    const updateDimensions = () => {
+      if (typeof window !== 'undefined') {
+        setDimensions({
+          width: window.innerWidth,
+          height: window.innerHeight,
+        });
+      }
     };
 
-    // Check on mount
-    checkMobile();
+    const checkMobile = () => {
+      if (typeof window === 'undefined') return;
+      
+      // Multiple checks for better reliability
+      const width = window.innerWidth;
+      const isMobileWidth = width < 768;
+      const isTouchDevice = 'ontouchstart' in window || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
+      const isMobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      // Consider mobile if width is small AND (has touch OR mobile user agent)
+      const isMobileDevice = isMobileWidth && (isTouchDevice || isMobileUserAgent);
+      
+      setIsMobile(isMobileDevice);
+      updateDimensions();
+    };
 
-    // Check on resize
-    window.addEventListener('resize', checkMobile);
+    // Initial check
+    checkMobile();
+    updateDimensions();
+
+    // Listen to resize and orientation changes
+    window.addEventListener('resize', () => {
+      checkMobile();
+      updateDimensions();
+    });
+    window.addEventListener('orientationchange', () => {
+      // Delay to ensure dimensions are updated after orientation change
+      setTimeout(() => {
+        checkMobile();
+        updateDimensions();
+      }, 100);
+    });
 
     return () => {
       window.removeEventListener('resize', checkMobile);
+      window.removeEventListener('orientationchange', checkMobile);
     };
   }, []);
 
@@ -359,72 +395,144 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
     };
   }, [pokemon?.sprite, childPokedex, showPokedex]);
 
-  if (loading) {
+  // Don't render until mounted (hydration safety)
+  if (!isMounted) {
     return (
       <div 
         style={{ 
-          width: '80vw', 
-          height: '80vh', 
+          width: '100%',
+          height: '100%',
           display: 'flex', 
           justifyContent: 'center', 
           alignItems: 'center', 
-          background: 'var(--bg-primary)' 
+          background: 'var(--bg-primary)',
+        }}
+      >
+        <div style={{ color: 'var(--text-primary)' }}>Loading...</div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    // Use calculated dimensions instead of vh/vw for better mobile support
+    const containerWidth = isMobile && dimensions.height > 0 
+      ? `${dimensions.height}px` 
+      : '80vw';
+    const containerHeight = isMobile && dimensions.width > 0 
+      ? `${dimensions.width}px` 
+      : '80vh';
+
+    return (
+      <div 
+        style={{ 
+          // When parent is rotated 90deg, swap dimensions
+          width: containerWidth,
+          height: containerHeight,
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          background: 'var(--bg-primary)',
+          overflow: 'hidden',
         }}
       >
         <ImageNext
           src="https://storage.googleapis.com/pokemon-golden-island/pokeball.gif"
           alt="Loading..."
-          width={300}
-          height={300}
+          width={isMobile ? 150 : 300}
+          height={isMobile ? 150 : 300}
           unoptimized
+          style={{
+            width: isMobile ? '150px' : '300px',
+            height: isMobile ? '150px' : '300px',
+          }}
         />
       </div>
     );
   }
 
+  // Use calculated dimensions instead of vh/vw for better mobile support
+  const containerWidth = isMobile && dimensions.height > 0 
+    ? `${dimensions.height}px` 
+    : '80vw';
+  const containerHeight = isMobile && dimensions.width > 0 
+    ? `${dimensions.width}px` 
+    : '80vh';
+
   return (
     <div 
       className="flex justify-center items-center overflow-hidden relative"
       style={{ 
-        width: isMobile ? '100vw' : '80vw',
-        height: isMobile ? '100vh' : '80vh',
+        // When parent is rotated 90deg, dimensions are swapped
+        // iPhone SE: 375x667 portrait -> 667x375 landscape after rotation
+        // Use calculated pixel values instead of vh/vw for better mobile reliability
+        width: containerWidth,
+        height: containerHeight,
+        maxWidth: containerWidth,
+        maxHeight: containerHeight,
         backgroundColor: 'var(--bg-tertiary)',
         zIndex: 1001, // Ensure it's above the container
         position: 'relative',
+        overflow: 'hidden',
       }}
     >
-      <div className="flex flex-row-reverse w-[60vw] h-[65vh] relative">
+      <div 
+        className="flex flex-row-reverse relative"
+        style={{
+          width: isMobile ? '100%' : '60vw',
+          height: isMobile ? '100%' : '65vh',
+          maxWidth: isMobile ? '100%' : '60vw',
+          maxHeight: isMobile ? '100%' : '65vh',
+          overflow: 'hidden',
+        }}
+      >
         {pokemon && showPokemon && (
-          <div className="top-2 left-2">
+          <div 
+            className="absolute"
+            style={{
+              // In landscape (rotated), top becomes right side
+              top: isMobile ? '1rem' : '0.5rem',
+              right: isMobile ? '1rem' : 'auto',
+              left: isMobile ? 'auto' : '0.5rem',
+              width: isMobile ? 'auto' : 'auto',
+              maxWidth: isMobile ? '40%' : 'none',
+            }}
+          >
             <div 
-              className="flex flex-col items-center justify-center w-[100%] h-[12%] rounded-full"
-              style={{ backgroundColor: 'var(--bg-primary)' }}
+              className="flex flex-col items-center justify-center rounded-full"
+              style={{ 
+                backgroundColor: 'var(--bg-primary)',
+                padding: isMobile ? '0.375rem' : '1rem',
+                marginBottom: isMobile ? '0.375rem' : '1rem',
+                width: '100%',
+              }}
             >
               <h2 
-                className="mb-1 top-1/2 left-2"
+                className="mb-1"
                 style={{ 
                   color: 'var(--text-primary)',
-                  fontSize: isMobile ? '1.25rem' : '1.5rem'
+                  fontSize: isMobile ? '0.75rem' : '1.5rem',
+                  textAlign: 'center',
+                  lineHeight: '1.2',
                 }}
               >
                 {pokemon.name.toUpperCase()}
               </h2>
-              <div className="flex items-start">
+              <div className="flex items-center gap-1">
                 <h2 
-                  className="pr-1"
                   style={{ 
                     color: 'var(--text-secondary)',
-                    fontSize: isMobile ? '0.875rem' : '1.125rem'
+                    fontSize: isMobile ? '0.5rem' : '1.125rem'
                   }}
                 >
                   HP
                 </h2>
                 <div 
-                  className="flex items-center justify-center rounded-full mb-1 relative"
+                  className="flex items-center justify-center rounded-full relative"
                   style={{ 
                     backgroundColor: 'var(--bg-tertiary)',
-                    width: isMobile ? '120px' : '200px',
-                    height: isMobile ? '20px' : '30px'
+                    width: isMobile ? '60px' : '200px',
+                    height: isMobile ? '10px' : '30px',
+                    minWidth: isMobile ? '60px' : '200px',
                   }}
                 >
                   <div className="bg-green-500 w-[98%] h-[80%] rounded-full" />
@@ -434,19 +542,30 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
             <ImageNext
               src={pokemon.sprite}
               alt={pokemon.name}
-              width={isMobile ? 180 : 300}
-              height={isMobile ? 180 : 300}
+              width={isMobile ? 150 : 300}
+              height={isMobile ? 150 : 300}
               unoptimized
               priority
               style={{
-                width: isMobile ? '180px' : '300px',
-                height: isMobile ? '180px' : '300px',
+                width: isMobile ? '150px' : '300px',
+                height: isMobile ? '150px' : '300px',
+                maxWidth: isMobile ? '150px' : '300px',
+                objectFit: 'contain',
               }}
             />
           </div>
         )}
 
-        <div className="absolute bottom-0 left-2">
+        <div 
+          className="absolute"
+          style={{
+            // In landscape (rotated), bottom-right becomes bottom-left (swapped with buttons)
+            bottom: isMobile ? '1rem' : '0.5rem',
+            left: isMobile ? '1rem' : 'auto',
+            right: isMobile ? 'auto' : '0.5rem',
+            width: isMobile ? 'auto' : 'auto',
+          }}
+        >
           <ImageNext
             src={imageRefs.current['playerBackSprite']?.src}
             alt={'Player'}
@@ -456,55 +575,76 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
             style={{
               width: isMobile ? '120px' : '250px',
               height: isMobile ? '120px' : '250px',
+              maxWidth: isMobile ? '120px' : '250px',
+              objectFit: 'contain',
             }}
           />
         </div>
 
-        <div className="absolute bottom-2 right-2">
-          <div className="flex justify-end mb-1">
-            <div 
-              className="py-1 px-2 rounded-lg border-2"
-              style={{ 
-                backgroundColor: 'var(--bg-primary)',
-                borderColor: 'var(--border-medium)',
-                color: 'var(--text-primary)',
-                fontSize: isMobile ? '0.75rem' : '1rem',
-                padding: isMobile ? '0.25rem 0.5rem' : '0.25rem 0.5rem'
-              }}
-            >
-              Balls Left: {pokeballs}
-            </div>
+        <div 
+          className="absolute"
+          style={{
+            // In landscape (rotated), bottom-left becomes bottom-right (swapped with player)
+            bottom: isMobile ? '1rem' : '0',
+            left: isMobile ? 'auto' : '0.5rem',
+            right: isMobile ? '1rem' : 'auto',
+            width: isMobile ? 'auto' : 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: isMobile ? 'flex-end' : 'flex-end',
+            gap: isMobile ? '0.375rem' : '0.5rem',
+          }}
+        >
+          <div 
+            className="rounded-lg border-2"
+            style={{ 
+              backgroundColor: 'var(--bg-primary)',
+              borderColor: 'var(--border-medium)',
+              color: 'var(--text-primary)',
+              fontSize: isMobile ? '0.625rem' : '1rem',
+              padding: isMobile ? '0.25rem 0.5rem' : '0.25rem 0.5rem',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Balls Left: {pokeballs}
           </div>
 
-          <div className="flex justify-end mb-1">
-            <div 
-              className="py-1 px-2 rounded-lg border-2"
-              style={{ 
-                backgroundColor: 'var(--bg-primary)',
-                borderColor: 'var(--border-medium)',
-                color: 'var(--text-primary)',
-                fontSize: isMobile ? '0.75rem' : '1rem',
-                padding: isMobile ? '0.25rem 0.5rem' : '0.25rem 0.5rem'
-              }}
-            >
-              Berries Left: {berries}
-            </div>
+          <div 
+            className="rounded-lg border-2"
+            style={{ 
+              backgroundColor: 'var(--bg-primary)',
+              borderColor: 'var(--border-medium)',
+              color: 'var(--text-primary)',
+              fontSize: isMobile ? '0.625rem' : '1rem',
+              padding: isMobile ? '0.25rem 0.5rem' : '0.25rem 0.5rem',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Berries Left: {berries}
           </div>
 
-          <div className="flex gap-2">
+          <div 
+            className="flex"
+            style={{
+              gap: isMobile ? '0.5rem' : '0.5rem',
+              flexDirection: isMobile ? 'row' : 'row',
+              alignItems: isMobile ? 'flex-start' : 'center',
+            }}
+          >
             <button
               className={`rounded-lg border-2 transition-colors
                 ${catchStatus === 'catch' || pokeballs === 0 ? 'cursor-not-allowed' : 'hover:opacity-90'}
               `}
               style={{
-                width: isMobile ? '100px' : '150px',
-                height: isMobile ? '60px' : '80px',
-                fontSize: isMobile ? '1rem' : '1.25rem',
+                width: isMobile ? '90px' : '150px',
+                height: isMobile ? '50px' : '80px',
+                fontSize: isMobile ? '0.875rem' : '1.25rem',
                 backgroundColor: catchStatus === 'catch' || pokeballs === 0 
                   ? 'var(--gray-400)' 
                   : 'var(--success)',
                 borderColor: 'var(--border-medium)',
-                color: 'var(--text-inverse)'
+                color: 'var(--text-inverse)',
+                flexShrink: 0,
               }}
               onClick={HandleBallClick}
               disabled={catchStatus === 'catch' || pokeballs === 0 || isThrowing}
@@ -512,20 +652,27 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
               BALL
             </button>
 
-            <div className="flex flex-col gap-2">
+            <div 
+              className="flex"
+              style={{
+                gap: isMobile ? '0.375rem' : '0.5rem',
+                flexDirection: 'column',
+              }}
+            >
               <button
                 className={`rounded-lg border-2 transition-colors
                 ${catchStatus === 'catch' || berries === 0 ? 'cursor-not-allowed' : 'hover:opacity-90'}
               `}
                 style={{
                   width: isMobile ? '60px' : '80px',
-                  height: isMobile ? '28px' : '35px',
-                  fontSize: isMobile ? '0.75rem' : '0.875rem',
+                  height: isMobile ? '24px' : '35px',
+                  fontSize: isMobile ? '0.625rem' : '0.875rem',
                   backgroundColor: catchStatus === 'catch' || berries === 0 
                     ? 'var(--gray-400)' 
                     : 'var(--primary)',
                   borderColor: 'var(--border-medium)',
-                  color: 'var(--text-inverse)'
+                  color: 'var(--text-inverse)',
+                  flexShrink: 0,
                 }}
                 onClick={HandleBerryClick}
                 disabled={catchStatus === 'catch' || berries === 0 || isThrowing}
@@ -536,11 +683,12 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
                 className="rounded-lg border-2 transition-colors hover:opacity-90"
                 style={{
                   width: isMobile ? '60px' : '80px',
-                  height: isMobile ? '28px' : '35px',
-                  fontSize: isMobile ? '0.75rem' : '0.875rem',
+                  height: isMobile ? '24px' : '35px',
+                  fontSize: isMobile ? '0.625rem' : '0.875rem',
                   backgroundColor: 'var(--danger)',
                   borderColor: 'var(--border-medium)',
-                  color: 'var(--text-inverse)'
+                  color: 'var(--text-inverse)',
+                  flexShrink: 0,
                 }}
                 onClick={HandleEndBattle}
               >
@@ -551,32 +699,50 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
         </div>
 
         {isThrowing && (
-          <div className="absolute top-[30%] left-[80%]">
+          <div 
+            className="absolute"
+            style={{
+              top: isMobile ? '20%' : '30%',
+              left: isMobile ? '75%' : '80%',
+              transform: isMobile ? 'translateX(-50%)' : 'none',
+            }}
+          >
             <ImageNext
               src={imageRefs.current['catching']?.src}
               alt="Catching Pokemon..."
-              width={isMobile ? 60 : 100}
-              height={isMobile ? 60 : 100}
+              width={isMobile ? 50 : 100}
+              height={isMobile ? 50 : 100}
               unoptimized
               style={{
-                width: isMobile ? '60px' : '100px',
-                height: isMobile ? '60px' : '100px',
+                width: isMobile ? '50px' : '100px',
+                height: isMobile ? '50px' : '100px',
+                maxWidth: isMobile ? '50px' : '100px',
+                objectFit: 'contain',
               }}
             />
           </div>
         )}
 
         {givingBerry && (
-          <div className="absolute top-[25%] left-[70%]">
+          <div 
+            className="absolute"
+            style={{
+              top: isMobile ? '15%' : '25%',
+              left: isMobile ? '65%' : '70%',
+              transform: isMobile ? 'translateX(-50%)' : 'none',
+            }}
+          >
             <ImageNext
               src={imageRefs.current['berry']?.src}
               alt="Giving Berry..."
-              width={isMobile ? 60 : 100}
-              height={isMobile ? 60 : 100}
+              width={isMobile ? 50 : 100}
+              height={isMobile ? 50 : 100}
               unoptimized
               style={{
-                width: isMobile ? '60px' : '100px',
-                height: isMobile ? '60px' : '100px',
+                width: isMobile ? '50px' : '100px',
+                height: isMobile ? '50px' : '100px',
+                maxWidth: isMobile ? '50px' : '100px',
+                objectFit: 'contain',
               }}
             />
           </div>
@@ -586,31 +752,36 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
           <div 
             className="absolute flex flex-col items-center"
             style={{
-              top: isMobile ? '25%' : '40%',
+              top: isMobile ? '30%' : '40%',
               left: '50%',
-              transform: 'translateX(-50%)',
-              textAlign: 'center'
+              transform: 'translate(-50%, -50%)',
+              textAlign: 'center',
+              width: isMobile ? '90%' : 'auto',
+              maxWidth: isMobile ? '90%' : 'none',
             }}
           >
             <ImageNext
               src={imageRefs.current['closePokeball']?.src}
               alt="Caught!"
-              width={isMobile ? 80 : 150}
-              height={isMobile ? 100 : 200}
+              width={isMobile ? 60 : 150}
+              height={isMobile ? 60 : 200}
               unoptimized
               style={{
-                width: isMobile ? '80px' : '200px',
-                height: isMobile ? '80px' : '200px',
+                width: isMobile ? '60px' : '200px',
+                height: isMobile ? '60px' : '200px',
+                maxWidth: isMobile ? '60px' : '200px',
+                objectFit: 'contain',
               }}
             />
-            <div style={{ marginTop: isMobile ? '0.5rem' : '1rem' }}>
+            <div style={{ marginTop: isMobile ? '0.5rem' : '1rem', width: '100%' }}>
               {currentBerryReward && (
                 <p 
                   className="font-bold"
                   style={{ 
                     color: 'var(--primary)',
-                    fontSize: isMobile ? '0.7rem' : '1rem',
-                    marginBottom: isMobile ? '0.25rem' : '0.5rem'
+                    fontSize: isMobile ? '0.625rem' : '1rem',
+                    marginBottom: isMobile ? '0.25rem' : '0.5rem',
+                    lineHeight: '1.2',
                   }}
                 >
                   Congratulations! +{currentBerryReward} Berry
@@ -620,8 +791,9 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
                 className={`font-bold ${currentPokeballReward ? '' : 'invisible'}`}
                 style={{ 
                   color: 'var(--text-primary)',
-                  fontSize: isMobile ? '0.7rem' : '1rem',
-                  marginBottom: isMobile ? '0.25rem' : '0.5rem'
+                  fontSize: isMobile ? '0.625rem' : '1rem',
+                  marginBottom: isMobile ? '0.25rem' : '0.5rem',
+                  lineHeight: '1.2',
                 }}
               >
                 Congratulations! +{currentPokeballReward} Pokeballs
@@ -630,8 +802,9 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
                 className="font-bold"
                 style={{ 
                   color: 'var(--success)',
-                  fontSize: isMobile ? '1.25rem' : '1.875rem',
-                  marginTop: isMobile ? '0.5rem' : '1rem'
+                  fontSize: isMobile ? '1rem' : '1.875rem',
+                  marginTop: isMobile ? '0.5rem' : '1rem',
+                  lineHeight: '1.2',
                 }}
               >
                 Caught!
@@ -644,25 +817,34 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
           <div 
             className="flex flex-col items-center absolute"
             style={{
-              top: isMobile ? '30%' : '40%',
+              top: isMobile ? '35%' : '40%',
               left: '50%',
-              transform: 'translateX(-50%)',
-              textAlign: 'center'
+              transform: 'translate(-50%, -50%)',
+              textAlign: 'center',
+              width: isMobile ? '90%' : 'auto',
             }}
           >
             <ImageNext
               src={imageRefs.current['openPokeBall']?.src}
               alt="Escaped!"
-              width={isMobile ? 50 : 200}
-              height={isMobile ? 50 : 200}
+              width={isMobile ? 40 : 200}
+              height={isMobile ? 40 : 200}
               unoptimized
+              style={{
+                width: isMobile ? '40px' : '200px',
+                height: isMobile ? '40px' : '200px',
+                maxWidth: isMobile ? '40px' : '200px',
+                objectFit: 'contain',
+              }}
             />
             <h2 
-              className="mt-4 font-bold"
+              className="font-bold"
               style={{ 
                 color: 'var(--danger)',
-                fontSize: isMobile ? '1.125rem' : '1.875rem',
-                whiteSpace: 'nowrap'
+                fontSize: isMobile ? '0.875rem' : '1.875rem',
+                marginTop: isMobile ? '0.5rem' : '1rem',
+                lineHeight: '1.2',
+                whiteSpace: 'nowrap',
               }}
             >
               The Pokemon escaped!
