@@ -207,6 +207,10 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const pokemonCount = player.pokedex?.capturedPokemons?.length || 0;
       const hasSavedPokemons = pokemonCount > 0;
       
+      setPlayerId(player.id);
+      
+      // ALWAYS use values from backend, regardless of whether there are saved pokemons
+      // This ensures pokeballs and berries are always up-to-date from the database
       console.log('Player data loaded from backend:', {
         id: player.id,
         pokeballs: player.pokeballs,
@@ -214,22 +218,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         pokemonCount: pokemonCount,
         hasSavedPokemons: hasSavedPokemons,
       });
-      
-      setPlayerId(player.id);
-      
-      // If player has saved pokemons, use data from backend
-      // Otherwise, use default values (30 pokeballs, 5 berries) for new accounts
-      if (hasSavedPokemons) {
-        // Account with saved data - load from backend
-        console.log('Account has saved pokemons - loading data from backend');
-        setPokeballs(player.pokeballs);
-        setBerries(player.berries);
-      } else {
-        // New account - use default values
-        console.log('New account detected - using default values (30 pokeballs, 5 berries)');
-        setPokeballs(30);
-        setBerries(5);
-      }
+      setPokeballs(player.pokeballs ?? 30);
+      setBerries(player.berries ?? 5);
       
       setTotalPokemons(player.pokedex?.totalPokemons || 151);
 

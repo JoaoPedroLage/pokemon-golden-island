@@ -22,18 +22,40 @@ function AuthContent() {
   const handleAuthSuccess = async (
     token: string,
     user: { id: number; email: string; name: string },
-    player: { id: number; name: string } | null
+    player: { 
+      id: number; 
+      name: string; 
+      pokeballs?: number; 
+      berries?: number; 
+      pokedex?: {
+        id: number;
+        totalPokemons: number;
+        totalCaptured: number;
+        capturedPokemons: Array<{
+          id: number;
+          name: string;
+          sprite: string;
+          type: string;
+          quantity: number;
+        }>;
+      } | null;
+    } | null
   ) => {
-    // Se o player foi criado, inicializa no contexto
+    // Save playerId to localStorage immediately so GameContext can load it
     if (player) {
+      localStorage.setItem('playerId', player.id.toString());
+      
+      // Load player data from backend to ensure we have the latest data
+      // This will be called before redirect, ensuring data is loaded
       try {
         await loadPlayer(player.id);
       } catch (error) {
-        console.error('Erro ao carregar player:', error);
+        console.error('Error loading player:', error);
+        // Continue with redirect even if load fails
       }
     }
     
-    // Redireciona para o jogo
+    // Redirect to game after data is loaded
     router.push('/game');
   };
 
