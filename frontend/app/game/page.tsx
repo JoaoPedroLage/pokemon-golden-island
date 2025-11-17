@@ -37,6 +37,7 @@ const Game: React.FC = () => {
   const [inBattle, setInBattle] = useState(false); // New state to control if we are in battle
   const [wasInBattle, setWasInBattle] = useState(false); // New state to control if the player was in battle
   const [initialPlayerPosition, setInitialPlayerPosition] = useState<{ x: number; y: number } | null>(null); // State to save the initial player position
+  const [playerPositionBeforePokedex, setPlayerPositionBeforePokedex] = useState<{ x: number; y: number } | null>(null); // State to save player position before opening pokedex
   const [showPokedex, setShowPokedex] = React.useState(false); // State to control the Pokedex display
   const [showTooltip, setShowTooltip] = useState(false); // State to control the tooltip display
   const [isLandscape, setIsLandscape] = useState(false); // State to track landscape orientation (not used for rotation anymore)
@@ -659,7 +660,23 @@ const Game: React.FC = () => {
       if (event.key === 'Escape') {
         event.preventDefault();
 
-        setShowPokedex(false); // Change state to display the Pokedex
+        // Save current position before closing pokedex
+        if (playerRef.current && showPokedex) {
+          setPlayerPositionBeforePokedex({
+            x: playerRef.current.position.x,
+            y: playerRef.current.position.y
+          });
+          // Save to localStorage immediately
+          try {
+            localStorage.setItem('playerPosition', JSON.stringify({
+              x: playerRef.current.position.x,
+              y: playerRef.current.position.y
+            }));
+          } catch (e) {
+            console.error('Error saving player position:', e);
+          }
+        }
+        setShowPokedex(false); // Change state to close the Pokedex
       }
     };
 
@@ -668,6 +685,36 @@ const Game: React.FC = () => {
       if (event.key === 'Enter') {
         event.preventDefault();
 
+        if (!showPokedex) {
+          // Opening pokedex - save current position
+          if (playerRef.current) {
+            setPlayerPositionBeforePokedex({
+              x: playerRef.current.position.x,
+              y: playerRef.current.position.y
+            });
+            // Save to localStorage immediately
+            try {
+              localStorage.setItem('playerPosition', JSON.stringify({
+                x: playerRef.current.position.x,
+                y: playerRef.current.position.y
+              }));
+            } catch (e) {
+              console.error('Error saving player position:', e);
+            }
+          }
+        } else {
+          // Closing pokedex - restore position
+          if (playerRef.current && playerPositionBeforePokedex) {
+            playerRef.current.position.x = playerPositionBeforePokedex.x;
+            playerRef.current.position.y = playerPositionBeforePokedex.y;
+            // Save to localStorage
+            try {
+              localStorage.setItem('playerPosition', JSON.stringify(playerPositionBeforePokedex));
+            } catch (e) {
+              console.error('Error saving player position:', e);
+            }
+          }
+        }
         setShowPokedex(!showPokedex); // Change state to display the Pokedex
       }
     };
@@ -685,6 +732,17 @@ const Game: React.FC = () => {
 
     // Listener to close Pokedex via mobile
     const handleClosePokedex = () => {
+      // Restore position when closing pokedex via mobile button
+      if (playerRef.current && playerPositionBeforePokedex) {
+        playerRef.current.position.x = playerPositionBeforePokedex.x;
+        playerRef.current.position.y = playerPositionBeforePokedex.y;
+        // Save to localStorage
+        try {
+          localStorage.setItem('playerPosition', JSON.stringify(playerPositionBeforePokedex));
+        } catch (e) {
+          console.error('Error saving player position:', e);
+        }
+      }
       setShowPokedex(false);
     };
     window.addEventListener('closePokedex', handleClosePokedex as EventListener);
@@ -700,7 +758,7 @@ const Game: React.FC = () => {
         cancelAnimationFrame(animationIdRef.current);
       }
     };
-  }, [inBattle, initialPlayerPosition, showPokedex, startAnimation, wasInBattle, isAuthenticated]);
+  }, [inBattle, initialPlayerPosition, showPokedex, playerPositionBeforePokedex, startAnimation, wasInBattle, isAuthenticated]);
 
   // Show loading screen while checking authentication
   if (isCheckingAuth) {
@@ -991,6 +1049,36 @@ const Game: React.FC = () => {
                 }
               }}
               onOpenPokedex={() => {
+                if (!showPokedex) {
+                  // Opening pokedex - save current position
+                  if (playerRef.current) {
+                    setPlayerPositionBeforePokedex({
+                      x: playerRef.current.position.x,
+                      y: playerRef.current.position.y
+                    });
+                    // Save to localStorage immediately
+                    try {
+                      localStorage.setItem('playerPosition', JSON.stringify({
+                        x: playerRef.current.position.x,
+                        y: playerRef.current.position.y
+                      }));
+                    } catch (e) {
+                      console.error('Error saving player position:', e);
+                    }
+                  }
+                } else {
+                  // Closing pokedex - restore position
+                  if (playerRef.current && playerPositionBeforePokedex) {
+                    playerRef.current.position.x = playerPositionBeforePokedex.x;
+                    playerRef.current.position.y = playerPositionBeforePokedex.y;
+                    // Save to localStorage
+                    try {
+                      localStorage.setItem('playerPosition', JSON.stringify(playerPositionBeforePokedex));
+                    } catch (e) {
+                      console.error('Error saving player position:', e);
+                    }
+                  }
+                }
                 setShowPokedex(!showPokedex);
               }}
               onToggleTooltip={() => {

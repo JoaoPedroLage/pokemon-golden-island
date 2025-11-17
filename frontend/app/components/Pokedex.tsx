@@ -215,9 +215,10 @@ const Pokedex: React.FC = () => {
 
               {/* List of captured Pokemon */}
               <div 
-                className="grid gap-2 md:gap-4"
+                className="grid md:gap-4"
                 style={{
-                  gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(150px, 1fr))',
+                  gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(auto-fill, minmax(150px, 1fr))',
+                  gap: isMobile ? '0.5rem' : '1rem',
                 }}
               >
                 {capturedPokemons.map((pokemon: Pokemon) => (
@@ -225,26 +226,30 @@ const Pokedex: React.FC = () => {
                     key={pokemon.name}
                     className="pokedex-item rounded-lg shadow-md flex flex-col items-center transition-transform hover:scale-105"
                     style={{
-                      padding: isMobile ? '0.5rem' : '1rem',
+                      padding: isMobile ? '0.25rem' : '1rem',
                       backgroundColor: 'var(--bg-secondary)',
-                      border: '2px solid var(--border-light)'
+                      border: '1px solid var(--border-light)'
                     }}
                   >
-                    <div className="relative w-full flex justify-center mb-2 md:mb-3">
+                    <div className="relative w-full flex justify-center" style={{ marginBottom: isMobile ? '0.25rem' : '0.75rem' }}>
                       <Image
                         src={pokemon.sprite}
                         alt={pokemon.name}
-                        width={isMobile ? 80 : 120}
-                        height={isMobile ? 80 : 120}
+                        width={isMobile ? 40 : 120}
+                        height={isMobile ? 40 : 120}
                         className="object-contain"
+                        style={{
+                          maxWidth: isMobile ? '40px' : '120px',
+                          maxHeight: isMobile ? '40px' : '120px',
+                        }}
                       />
                       {pokemon.quantity > 1 && (
                         <div
-                          className="absolute -top-1 -right-1 rounded-full flex items-center justify-center font-bold"
+                          className="absolute -top-0.5 -right-0.5 rounded-full flex items-center justify-center font-bold"
                           style={{
-                            width: isMobile ? '1.25rem' : '1.75rem',
-                            height: isMobile ? '1.25rem' : '1.75rem',
-                            fontSize: isMobile ? '0.625rem' : '0.875rem',
+                            width: isMobile ? '0.875rem' : '1.75rem',
+                            height: isMobile ? '0.875rem' : '1.75rem',
+                            fontSize: isMobile ? '0.45rem' : '0.875rem',
                             backgroundColor: 'var(--primary)',
                             color: 'var(--text-inverse)'
                           }}
@@ -255,21 +260,26 @@ const Pokedex: React.FC = () => {
                     </div>
 
                     <h3
-                      className="font-semibold mb-1 md:mb-2 text-center capitalize"
+                      className="font-semibold text-center capitalize"
                       style={{ 
                         color: 'var(--text-primary)',
-                        fontSize: isMobile ? '0.75rem' : '1.125rem'
+                        fontSize: isMobile ? '0.5rem' : '1.125rem',
+                        lineHeight: isMobile ? '1.1' : '1.5',
+                        marginBottom: isMobile ? '0.125rem' : '0.5rem'
                       }}
                     >
                       {pokemon.name}
                     </h3>
 
                     <p
-                      className="text-center mb-2 md:mb-3 px-1 py-0.5 md:px-2 md:py-1 rounded"
+                      className="text-center rounded"
                       style={{
-                        fontSize: isMobile ? '0.625rem' : '0.875rem',
+                        fontSize: isMobile ? '0.4rem' : '0.875rem',
                         color: 'var(--text-secondary)',
-                        backgroundColor: 'var(--bg-primary)'
+                        backgroundColor: 'var(--bg-primary)',
+                        lineHeight: isMobile ? '1.1' : '1.5',
+                        padding: isMobile ? '0.125rem 0.25rem' : '0.25rem 0.5rem',
+                        marginBottom: isMobile ? '0.25rem' : '0.75rem'
                       }}
                     >
                       {pokemon.type}
@@ -278,15 +288,15 @@ const Pokedex: React.FC = () => {
                     <button
                       className="mt-auto rounded font-medium transition-all hover:opacity-90 w-full"
                       style={{
-                        padding: isMobile ? '0.375rem 0.5rem' : '0.5rem 1rem',
-                        fontSize: isMobile ? '0.625rem' : '1rem',
+                        padding: isMobile ? '0.125rem 0.25rem' : '0.5rem 1rem',
+                        fontSize: isMobile ? '0.4rem' : '1rem',
                         backgroundColor: 'var(--danger)',
                         color: 'var(--text-inverse)',
                         border: '1px solid var(--border-medium)'
                       }}
                       onClick={() => releasePokemon(pokemon.name)}
                     >
-                      Free Pokemon
+                      Free
                     </button>
                   </div>
                 ))}

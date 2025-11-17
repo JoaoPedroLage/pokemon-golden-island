@@ -132,15 +132,20 @@ const GameInfoTooltip: React.FC<GameInfoTooltipProps> = ({ isOpen: externalIsOpe
       {/* Info Button - desktop only */}
       <button
         onClick={toggleTooltip}
-        className="hidden md:flex w-12 h-12 rounded-full items-center justify-center text-2xl font-bold transition-all hover:scale-110 shadow-lg"
+        className="hidden md:flex rounded-full items-center justify-center text-2xl font-bold transition-all hover:scale-110 shadow-lg"
         style={{
+          width: '3rem',
+          height: '3rem',
           backgroundColor: 'var(--primary)',
           color: 'var(--text-inverse)',
-          border: '2px solid var(--border-medium)'
+          border: '2px solid var(--border-medium)',
+          // Increase touch/click area without increasing visual size
+          padding: '0.75rem',
+          margin: '-0.75rem',
         }}
         aria-label="Game Information"
       >
-        ℹ️
+        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>ℹ️</span>
       </button>
 
       {/* Tooltip Content */}
@@ -190,6 +195,11 @@ const GameInfoTooltip: React.FC<GameInfoTooltipProps> = ({ isOpen: externalIsOpe
               width: '100%',
               touchAction: 'pan-y', // Allow vertical scrolling with touch gestures
               overscrollBehavior: 'contain', // Prevent scroll chaining
+              // Increase touch/scroll area by extending scrollable zone with negative margins
+              marginLeft: isMobile ? '0' : '-0.75rem',
+              marginRight: isMobile ? '0' : '-0.75rem',
+              paddingLeft: isMobile ? '0.75rem' : 'calc(1.5rem + 0.75rem)',
+              paddingRight: isMobile ? '0.75rem' : 'calc(1.5rem + 0.75rem)',
             }}
           >
             {/* Header */}
