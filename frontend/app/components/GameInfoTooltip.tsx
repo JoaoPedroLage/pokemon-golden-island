@@ -126,6 +126,9 @@ const GameInfoTooltip: React.FC<GameInfoTooltipProps> = ({ isOpen: externalIsOpe
         zIndex: isMobile ? 1000 : 100,
         top: isMobile ? undefined : '1rem',
         right: isMobile ? undefined : '1rem',
+        width: '3rem',
+        height: '3rem',
+        marginTop: '1rem',
         position: 'fixed',
       }}
     >

@@ -51,6 +51,16 @@ const Game: React.FC = () => {
   const revealedAreasRef = useRef<Set<string>>(new Set()); // Track revealed areas in fog of war mode
   const cameraRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 }); // Camera position
 
+  const showPokedexRef = useRef(showPokedex);
+  useEffect(() => {
+    showPokedexRef.current = showPokedex;
+  }, [showPokedex]);
+
+  const playerPositionBeforePokedexRef = useRef<{ x: number; y: number } | null>(playerPositionBeforePokedex);
+  useEffect(() => {
+    playerPositionBeforePokedexRef.current = playerPositionBeforePokedex;
+  }, [playerPositionBeforePokedex]);
+
   // Check authentication on load
   useEffect(() => {
     const checkAuth = async () => {
@@ -661,7 +671,7 @@ const Game: React.FC = () => {
         event.preventDefault();
 
         // Save current position before closing pokedex
-        if (playerRef.current && showPokedex) {
+        if (playerRef.current && showPokedexRef.current) {
           setPlayerPositionBeforePokedex({
             x: playerRef.current.position.x,
             y: playerRef.current.position.y
@@ -685,7 +695,7 @@ const Game: React.FC = () => {
       if (event.key === 'Enter') {
         event.preventDefault();
 
-        if (!showPokedex) {
+        if (!showPokedexRef.current) {
           // Opening pokedex - save current position
           if (playerRef.current) {
             setPlayerPositionBeforePokedex({
@@ -704,18 +714,18 @@ const Game: React.FC = () => {
           }
         } else {
           // Closing pokedex - restore position
-          if (playerRef.current && playerPositionBeforePokedex) {
-            playerRef.current.position.x = playerPositionBeforePokedex.x;
-            playerRef.current.position.y = playerPositionBeforePokedex.y;
+          if (playerRef.current && playerPositionBeforePokedexRef.current) {
+            playerRef.current.position.x = playerPositionBeforePokedexRef.current.x;
+            playerRef.current.position.y = playerPositionBeforePokedexRef.current.y;
             // Save to localStorage
             try {
-              localStorage.setItem('playerPosition', JSON.stringify(playerPositionBeforePokedex));
+              localStorage.setItem('playerPosition', JSON.stringify(playerPositionBeforePokedexRef.current));
             } catch (e) {
               console.error('Error saving player position:', e);
             }
           }
         }
-        setShowPokedex(!showPokedex); // Change state to display the Pokedex
+        setShowPokedex((prev) => !prev); // Change state to display the Pokedex
       }
     };
 
@@ -733,12 +743,12 @@ const Game: React.FC = () => {
     // Listener to close Pokedex via mobile
     const handleClosePokedex = () => {
       // Restore position when closing pokedex via mobile button
-      if (playerRef.current && playerPositionBeforePokedex) {
-        playerRef.current.position.x = playerPositionBeforePokedex.x;
-        playerRef.current.position.y = playerPositionBeforePokedex.y;
+      if (playerRef.current && playerPositionBeforePokedexRef.current) {
+        playerRef.current.position.x = playerPositionBeforePokedexRef.current.x;
+        playerRef.current.position.y = playerPositionBeforePokedexRef.current.y;
         // Save to localStorage
         try {
-          localStorage.setItem('playerPosition', JSON.stringify(playerPositionBeforePokedex));
+          localStorage.setItem('playerPosition', JSON.stringify(playerPositionBeforePokedexRef.current));
         } catch (e) {
           console.error('Error saving player position:', e);
         }
@@ -758,7 +768,7 @@ const Game: React.FC = () => {
         cancelAnimationFrame(animationIdRef.current);
       }
     };
-  }, [inBattle, initialPlayerPosition, showPokedex, playerPositionBeforePokedex, startAnimation, wasInBattle, isAuthenticated]);
+  }, [inBattle, initialPlayerPosition, startAnimation, wasInBattle, isAuthenticated]);
 
   // Show loading screen while checking authentication
   if (isCheckingAuth) {
