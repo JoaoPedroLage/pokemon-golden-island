@@ -78,8 +78,14 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
     }
   };
 
-  const HandleBerryClick = () => {
-    if (berries <= 0) return; // Don't allow using berry if there are none
+  // Handler for berry button (works with both mouse and touch)
+  const HandleBerryClick = (e?: React.MouseEvent | React.TouchEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    if (berries <= 0 || catchStatus === 'catch' || isThrowing) return; // Don't allow using berry if conditions not met
     
     setGivingBerry(true);
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -97,17 +103,36 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
     }, 2000);
   };
 
-  const HandleEndBattle = () => {
+  // Handler for end battle button (works with both mouse and touch)
+  const HandleEndBattle = (e?: React.MouseEvent | React.TouchEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     if (pokeballs === 0) resetGame();
     endBattle();
   };
 
-  const HandleBallClick = () => {
+  // Handler for pokeball button (works with both mouse and touch)
+  const HandleBallClick = (e?: React.MouseEvent | React.TouchEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
 
-    usePokeball(); // Decrements the number of Pokeballs
+    // Check conditions before proceeding
+    if (pokeballs <= 0 || catchStatus === 'catch' || isThrowing) {
+      return;
+    }
+
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    usePokeball(); // Decrements the number of Pokeballs (not a React hook, it's a context function)
     setIsThrowing(true);
     setCatchStatus(null);
     setShowPokemon(false); // Hides the Pokemon during Pokeball throw
+
+    const pokeballsBeforeThrow = pokeballs;
 
     setTimeout(() => {
       const catchChance = Math.random();
@@ -129,9 +154,14 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
         }
 
         // Random chance to win 1 to 3 Pokeballs
+        const lowPokeballs = (pokeballsBeforeThrow ?? 0) <= 5;
         const pokeballReward = Math.random();
-        if (pokeballReward < 0.5) { // 50% chance to win 1-3 Pokeballs
-          const rewardAmount = Math.floor(Math.random() * 3) + 1; // Wins 1 to 3
+        const rewardChanceThreshold = lowPokeballs ? Math.min(0.35 * 2, 1) : 0.5;
+
+        if (pokeballReward < rewardChanceThreshold) {
+          const rewardAmount = lowPokeballs
+            ? Math.floor(Math.random() * 7) + 4 // 4 to 10
+            : Math.floor(Math.random() * 8) + 2; // 2 to 10
           setCurrentPokeballReward(rewardAmount);
           addPokeballs(rewardAmount);
         }
@@ -203,6 +233,15 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
       setBonusCatchChance(0);
       
       const baseResponse = 'https://pokeapi.co/api/v2';
+      const getSafeSprite = (detailsData: any) => {
+        return (
+          detailsData?.sprites?.front_default ||
+          detailsData?.sprites?.other?.['official-artwork']?.front_default ||
+          detailsData?.sprites?.other?.home?.front_default ||
+          detailsData?.sprites?.other?.dream_world?.front_default ||
+          'https://storage.googleapis.com/pokemon-golden-island/playerBackSprite.png'
+        );
+      };
       const generationOne = await fetch('https://pokeapi.co/api/v2/generation/1');
       const dataGenerationOne = await generationOne.json();
 
@@ -249,7 +288,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
         
         if (await hasPokemonAllowedType(randomPokemonName)) {
           const detailsData = await (await fetch(`${baseResponse}/pokemon/${randomPokemonName}`)).json();
-          const sprite = detailsData.sprites.front_default;
+          const sprite = getSafeSprite(detailsData);
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const type = detailsData.types.map((typeInfo: any) => typeInfo.type.name);
 
@@ -272,7 +311,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
         const randomPokemon = pokemonSpecies[Math.floor(Math.random() * pokemonSpecies.length)];
         const randomPokemonName = randomPokemon.name;
         const detailsData = await (await fetch(`${baseResponse}/pokemon/${randomPokemonName}`)).json();
-        const sprite = detailsData.sprites.front_default;
+        const sprite = getSafeSprite(detailsData);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const type = detailsData.types.map((typeInfo: any) => typeInfo.type.name);
 
@@ -328,7 +367,14 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
         },
       ];
 
-      const imagePromises = imagesToLoad.map(async (image: { name: string; src: string | any }) => {
+      const validImages = imagesToLoad.filter((image) => Boolean(image.src));
+
+      if (validImages.length === 0) {
+        setLoading(false);
+        return;
+      }
+
+      const imagePromises = validImages.map(async (image: { name: string; src: string | any }) => {
         const img = new Image();
 
         try {
@@ -457,6 +503,10 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
   const containerHeight = isMobile && dimensions.width > 0 
     ? `${dimensions.width}px` 
     : '80vh';
+
+  const berryRunHeight = isMobile ? 28 : 32;
+  const berryRunGap = isMobile ? 4 : 6;
+  const ballHeight = berryRunHeight * 2 + berryRunGap;
 
   return (
     <div 
@@ -626,74 +676,134 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
           <div 
             className="flex"
             style={{
-              gap: isMobile ? '0.5rem' : '0.5rem',
-              flexDirection: isMobile ? 'row' : 'row',
-              alignItems: isMobile ? 'flex-start' : 'flex-start',
+              gap: isMobile ? '0.75rem' : '1rem',
+              flexDirection: 'row',
+              alignItems: 'flex-start',
             }}
           >
-            <button
-              className={`rounded-lg border-2 transition-colors
-                ${catchStatus === 'catch' || pokeballs === 0 ? 'cursor-not-allowed' : 'hover:opacity-90'}
-              `}
+            <div
               style={{
-                width: isMobile ? '100px' : '140px',
-                height: isMobile ? '55px' : '70px',
-                fontSize: isMobile ? '0.875rem' : '1.125rem',
-                backgroundColor: catchStatus === 'catch' || pokeballs === 0 
-                  ? 'var(--gray-400)' 
-                  : 'var(--success)',
-                borderColor: 'var(--border-medium)',
-                color: 'var(--text-inverse)',
-                flexShrink: 0,
+                padding: 0,
               }}
-              onClick={HandleBallClick}
-              disabled={catchStatus === 'catch' || pokeballs === 0 || isThrowing}
             >
-              BALL
-            </button>
+              <button
+                className="rounded-lg border-2 transition-colors touch-manipulation"
+                style={{
+                  width: isMobile ? '100px' : '140px',
+                  height: `${ballHeight}px`,
+                  fontSize: isMobile ? '0.875rem' : '1.125rem',
+                  backgroundColor: catchStatus === 'catch' || pokeballs === 0 || isThrowing
+                    ? 'var(--gray-400)' 
+                    : 'var(--success)',
+                  borderColor: 'var(--border-medium)',
+                  color: 'var(--text-inverse)',
+                  flexShrink: 0,
+                  cursor: catchStatus === 'catch' || pokeballs === 0 || isThrowing ? 'not-allowed' : 'pointer',
+                  WebkitUserSelect: 'none',
+                  userSelect: 'none',
+                  WebkitTapHighlightColor: 'transparent',
+                  touchAction: 'manipulation',
+                }}
+                onClick={HandleBallClick}
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (!catchStatus && pokeballs > 0 && !isThrowing) {
+                    HandleBallClick(e);
+                  }
+                }}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                disabled={catchStatus === 'catch' || pokeballs === 0 || isThrowing}
+              >
+                BALL
+              </button>
+            </div>
 
             <div 
               className="flex"
               style={{
-                gap: isMobile ? '0.375rem' : '0.5rem',
+              gap: `${berryRunGap}px`,
                 flexDirection: 'column',
               }}
             >
-              <button
-                className={`rounded-lg border-2 transition-colors
-                ${catchStatus === 'catch' || berries === 0 ? 'cursor-not-allowed' : 'hover:opacity-90'}
-              `}
+              <div
                 style={{
-                  width: isMobile ? '65px' : '80px',
-                  height: isMobile ? '28px' : '32px',
-                  fontSize: isMobile ? '0.625rem' : '0.875rem',
-                  backgroundColor: catchStatus === 'catch' || berries === 0 
-                    ? 'var(--gray-400)' 
-                    : 'var(--primary)',
-                  borderColor: 'var(--border-medium)',
-                  color: 'var(--text-inverse)',
-                  flexShrink: 0,
+                padding: 0,
                 }}
-                onClick={HandleBerryClick}
-                disabled={catchStatus === 'catch' || berries === 0 || isThrowing}
               >
-                BERRY
-              </button>
-              <button
-                className="rounded-lg border-2 transition-colors hover:opacity-90"
+                <button
+                  className="rounded-lg border-2 transition-colors touch-manipulation"
+                  style={{
+                    width: isMobile ? '65px' : '80px',
+                  height: `${berryRunHeight}px`,
+                    fontSize: isMobile ? '0.625rem' : '0.875rem',
+                    backgroundColor: catchStatus === 'catch' || berries === 0 || isThrowing
+                      ? 'var(--gray-400)' 
+                      : 'var(--primary)',
+                    borderColor: 'var(--border-medium)',
+                    color: 'var(--text-inverse)',
+                    flexShrink: 0,
+                    cursor: catchStatus === 'catch' || berries === 0 || isThrowing ? 'not-allowed' : 'pointer',
+                    WebkitUserSelect: 'none',
+                    userSelect: 'none',
+                    WebkitTapHighlightColor: 'transparent',
+                    touchAction: 'manipulation',
+                  }}
+                  onClick={HandleBerryClick}
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!catchStatus && berries > 0 && !isThrowing) {
+                      HandleBerryClick(e);
+                    }
+                  }}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  disabled={catchStatus === 'catch' || berries === 0 || isThrowing}
+                >
+                  BERRY
+                </button>
+              </div>
+              <div
                 style={{
-                  width: isMobile ? '65px' : '80px',
-                  height: isMobile ? '28px' : '32px',
-                  fontSize: isMobile ? '0.625rem' : '0.875rem',
-                  backgroundColor: 'var(--danger)',
-                  borderColor: 'var(--border-medium)',
-                  color: 'var(--text-inverse)',
-                  flexShrink: 0,
+                padding: 0,
                 }}
-                onClick={HandleEndBattle}
               >
-                RUN
-              </button>
+                <button
+                  className="rounded-lg border-2 transition-colors touch-manipulation"
+                  style={{
+                    width: isMobile ? '65px' : '80px',
+                  height: `${berryRunHeight}px`,
+                    fontSize: isMobile ? '0.625rem' : '0.875rem',
+                    backgroundColor: 'var(--danger)',
+                    borderColor: 'var(--border-medium)',
+                    color: 'var(--text-inverse)',
+                    flexShrink: 0,
+                    cursor: 'pointer',
+                    WebkitUserSelect: 'none',
+                    userSelect: 'none',
+                    WebkitTapHighlightColor: 'transparent',
+                    touchAction: 'manipulation',
+                  }}
+                  onClick={HandleEndBattle}
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    HandleEndBattle(e);
+                  }}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                >
+                  RUN
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -776,7 +886,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
                   className="font-bold"
                   style={{ 
                     color: 'var(--primary)',
-                    fontSize: isMobile ? '0.625rem' : '1rem',
+                    fontSize: isMobile ? '0.625rem' : '1.4rem',
                     marginBottom: isMobile ? '0.25rem' : '0.5rem',
                     lineHeight: '1.2',
                   }}
@@ -788,7 +898,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
                 className={`font-bold ${currentPokeballReward ? '' : 'invisible'}`}
                 style={{ 
                   color: 'var(--text-primary)',
-                  fontSize: isMobile ? '0.625rem' : '1rem',
+                  fontSize: isMobile ? '0.625rem' : '1.5rem',
                   marginBottom: isMobile ? '0.25rem' : '0.5rem',
                   lineHeight: '1.2',
                 }}
@@ -834,7 +944,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
               className="font-bold"
               style={{ 
                 color: 'var(--danger)',
-                fontSize: isMobile ? '0.875rem' : '1.875rem',
+                fontSize: isMobile ? '0.875rem' : '1.675rem',
                 marginTop: isMobile ? '0.5rem' : '1rem',
                 lineHeight: '1.2',
                 whiteSpace: 'nowrap',
