@@ -645,58 +645,10 @@ const Game: React.FC = () => {
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const key = e.key;
-      // Check if the key exists in the keys object (excluding lastPressed)
-      if (key !== 'lastPressed' && key in keysRef.current && keysRef.current[key as Key] && typeof keysRef.current[key as Key] === 'object' && 'pressed' in (keysRef.current[key as Key] as any)) {
+      
+      // Handle Enter key for Pokedex (check first, before movement keys)
+      if (key === 'Enter') {
         e.preventDefault();
-        (keysRef.current[key as Key] as { pressed: boolean }).pressed = true;
-        // Update the last pressed key
-        keysRef.current.lastPressed = key as Key;
-
-        if (!animationIdRef.current) {
-          startAnimation(c); // Start the animation with the correct image
-        }
-        if (playerRef.current!.inBattle) {
-          setInBattle(true);
-        }
-        if (playerRef.current!.inBattle) {
-          // If the player is in battle, save the initial position
-          setInitialPlayerPosition({
-            x: playerRef.current!.position.x,
-            y: playerRef.current!.position.y,
-          });
-        }
-      }
-    };
-
-    // Function to handle Escape key press
-    const handleKeyEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-
-        // Save current position before closing pokedex
-        if (playerRef.current && showPokedexRef.current) {
-          setPlayerPositionBeforePokedex({
-            x: playerRef.current.position.x,
-            y: playerRef.current.position.y
-          });
-          // Save to localStorage immediately
-          try {
-            localStorage.setItem('playerPosition', JSON.stringify({
-              x: playerRef.current.position.x,
-              y: playerRef.current.position.y
-            }));
-          } catch (e) {
-            console.error('Error saving player position:', e);
-          }
-        }
-        setShowPokedex(false); // Change state to close the Pokedex
-      }
-    };
-
-    // Function to handle Enter key press
-    const handleKeyEnter = (event: KeyboardEvent) => {
-      if (event.key === 'Enter') {
-        event.preventDefault();
 
         if (!showPokedexRef.current) {
           // Opening pokedex - save current position
@@ -728,16 +680,50 @@ const Game: React.FC = () => {
             }
           }
         }
-        setShowPokedex((prev) => !prev); // Change state to display the Pokedex
+        setShowPokedex((prev) => !prev); // Toggle Pokedex
+        return; // Don't process as movement key
+      }
+      
+      // Check if the key exists in the keys object (excluding lastPressed)
+      if (key !== 'lastPressed' && key in keysRef.current && keysRef.current[key as Key] && typeof keysRef.current[key as Key] === 'object' && 'pressed' in (keysRef.current[key as Key] as any)) {
+        e.preventDefault();
+        (keysRef.current[key as Key] as { pressed: boolean }).pressed = true;
+        // Update the last pressed key
+        keysRef.current.lastPressed = key as Key;
+
+        if (!animationIdRef.current) {
+          startAnimation(c); // Start the animation with the correct image
+        }
+      }
+    };
+
+    // Function to handle Escape key press
+    const handleKeyEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+
+        // Save current position before closing pokedex
+        if (playerRef.current && showPokedexRef.current) {
+          setPlayerPositionBeforePokedex({
+            x: playerRef.current.position.x,
+            y: playerRef.current.position.y
+          });
+          // Save to localStorage immediately
+          try {
+            localStorage.setItem('playerPosition', JSON.stringify({
+              x: playerRef.current.position.x,
+              y: playerRef.current.position.y
+            }));
+          } catch (e) {
+            console.error('Error saving player position:', e);
+          }
+        }
+        setShowPokedex(false); // Change state to close the Pokedex
       }
     };
 
     // Add event listener for Escape key
     window.addEventListener('keydown', handleKeyEscape);
-    // Add event listener for Enter key
-    window.addEventListener('keypress', handleKeyEnter);
-    // Add event listener for window resize
-    window.addEventListener('resize', updateCanvasSize);
     // Add event listeners for key press
     window.addEventListener('keyup', handleKeyUp);
     // Add event listeners for key release
@@ -775,7 +761,6 @@ const Game: React.FC = () => {
 
     return () => {
       window.removeEventListener('keydown', handleKeyEscape);
-      window.removeEventListener('keypress', handleKeyEnter);
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('resize', updateCanvasSize);
