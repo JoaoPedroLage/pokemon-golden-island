@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import pokedexImage from '../images/pokedex-icon.jpg';
 
@@ -19,13 +19,25 @@ const MobileControls: React.FC<MobileControlsProps> = ({
   onOpenPokedex,
   onToggleTooltip,
   isPokedexOpen,
-  isLandscape = false,
 }) => {
   const [isMobile, setIsMobile] = useState(false);
+  
+  // Refs for all directional buttons
+  const upButtonRef = useRef<HTMLButtonElement>(null);
+  const downButtonRef = useRef<HTMLButtonElement>(null);
+  const leftButtonRef = useRef<HTMLButtonElement>(null);
+  const rightButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Refs to track timers for delayed stop
+  const stopTimersRef = useRef<{ [key: string]: NodeJS.Timeout | null }>({
+    up: null,
+    down: null,
+    left: null,
+    right: null,
+  });
 
   useEffect(() => {
     const checkMobile = () => {
-      // Mostra controles mobile em telas menores que 768px (tablet e mobile)
       setIsMobile(window.innerWidth < 768);
     };
 
@@ -34,15 +46,77 @@ const MobileControls: React.FC<MobileControlsProps> = ({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Setup native touch event listeners with { passive: false }
+  useEffect(() => {
+    if (!isMobile) return;
+
+    const setupButton = (
+      buttonRef: React.RefObject<HTMLButtonElement>,
+      direction: 'up' | 'down' | 'left' | 'right'
+    ) => {
+      const button = buttonRef.current;
+      if (!button) return;
+
+      const handleTouchStart = (e: TouchEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Clear any existing timer for this direction
+        if (stopTimersRef.current[direction]) {
+          clearTimeout(stopTimersRef.current[direction]!);
+          stopTimersRef.current[direction] = null;
+        }
+        
+        onMove(direction);
+      };
+
+      const handleTouchEnd = (e: TouchEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Instead of stopping immediately, delay the stop by 100ms
+        // This gives enough time for battle detection to happen (like holding keyboard key)
+        stopTimersRef.current[direction] = setTimeout(() => {
+          onStop(direction);
+          stopTimersRef.current[direction] = null;
+        }, 100); // 100ms delay = approximately 6 frames at 60fps
+      };
+
+      // Add listeners with { passive: false } to allow preventDefault
+      button.addEventListener('touchstart', handleTouchStart, { passive: false });
+      button.addEventListener('touchend', handleTouchEnd, { passive: false });
+      button.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+
+      // Return cleanup function
+      return () => {
+        // Clear any pending timers
+        if (stopTimersRef.current[direction]) {
+          clearTimeout(stopTimersRef.current[direction]!);
+          stopTimersRef.current[direction] = null;
+        }
+        
+        button.removeEventListener('touchstart', handleTouchStart);
+        button.removeEventListener('touchend', handleTouchEnd);
+        button.removeEventListener('touchcancel', handleTouchEnd);
+      };
+    };
+
+    // Setup all buttons
+    const cleanupUp = setupButton(upButtonRef, 'up');
+    const cleanupDown = setupButton(downButtonRef, 'down');
+    const cleanupLeft = setupButton(leftButtonRef, 'left');
+    const cleanupRight = setupButton(rightButtonRef, 'right');
+
+    // Cleanup all listeners
+    return () => {
+      cleanupUp?.();
+      cleanupDown?.();
+      cleanupLeft?.();
+      cleanupRight?.();
+    };
+  }, [isMobile, onMove, onStop]);
+
   if (!isMobile) return null;
-
-  const handleTouchStart = (direction: 'up' | 'down' | 'left' | 'right') => {
-    onMove(direction);
-  };
-
-  const handleTouchEnd = (direction: 'up' | 'down' | 'left' | 'right') => {
-    onStop(direction);
-  };
 
   return (
     <>
@@ -61,8 +135,8 @@ const MobileControls: React.FC<MobileControlsProps> = ({
         <div 
           className="relative"
           style={{
-            width: isLandscape ? '9rem' : '9rem',
-            height: isLandscape ? '9rem' : '9rem',
+            width: '9rem',
+            height: '9rem',
           }}
         >
           {/* Center circle */}
@@ -76,24 +150,7 @@ const MobileControls: React.FC<MobileControlsProps> = ({
 
           {/* Up Arrow */}
           <button
-            onTouchStart={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleTouchStart('up');
-            }}
-            onTouchEnd={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleTouchEnd('up');
-            }}
-            onTouchCancel={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleTouchEnd('up');
-            }}
-            onMouseDown={() => handleTouchStart('up')}
-            onMouseUp={() => handleTouchEnd('up')}
-            onMouseLeave={() => handleTouchEnd('up')}
+            ref={upButtonRef}
             className="absolute top-0 left-1/2 transform -translate-x-1/2 rounded-lg flex items-center justify-center transition-all active:scale-90 select-none"
             style={{
               width: '3rem',
@@ -109,24 +166,7 @@ const MobileControls: React.FC<MobileControlsProps> = ({
 
           {/* Down Arrow */}
           <button
-            onTouchStart={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleTouchStart('down');
-            }}
-            onTouchEnd={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleTouchEnd('down');
-            }}
-            onTouchCancel={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleTouchEnd('down');
-            }}
-            onMouseDown={() => handleTouchStart('down')}
-            onMouseUp={() => handleTouchEnd('down')}
-            onMouseLeave={() => handleTouchEnd('down')}
+            ref={downButtonRef}
             className="absolute bottom-0 left-1/2 transform -translate-x-1/2 rounded-lg flex items-center justify-center transition-all active:scale-90 select-none"
             style={{
               width: '3rem',
@@ -142,24 +182,7 @@ const MobileControls: React.FC<MobileControlsProps> = ({
 
           {/* Left Arrow */}
           <button
-            onTouchStart={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleTouchStart('left');
-            }}
-            onTouchEnd={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleTouchEnd('left');
-            }}
-            onTouchCancel={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleTouchEnd('left');
-            }}
-            onMouseDown={() => handleTouchStart('left')}
-            onMouseUp={() => handleTouchEnd('left')}
-            onMouseLeave={() => handleTouchEnd('left')}
+            ref={leftButtonRef}
             className="absolute left-0 top-1/2 transform -translate-y-1/2 rounded-lg flex items-center justify-center transition-all active:scale-90 select-none"
             style={{
               width: '3rem',
@@ -175,24 +198,7 @@ const MobileControls: React.FC<MobileControlsProps> = ({
 
           {/* Right Arrow */}
           <button
-            onTouchStart={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleTouchStart('right');
-            }}
-            onTouchEnd={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleTouchEnd('right');
-            }}
-            onTouchCancel={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleTouchEnd('right');
-            }}
-            onMouseDown={() => handleTouchStart('right')}
-            onMouseUp={() => handleTouchEnd('right')}
-            onMouseLeave={() => handleTouchEnd('right')}
+            ref={rightButtonRef}
             className="absolute right-0 top-1/2 transform -translate-y-1/2 rounded-lg flex items-center justify-center transition-all active:scale-90 select-none"
             style={{
               width: '3rem',
@@ -223,7 +229,7 @@ const MobileControls: React.FC<MobileControlsProps> = ({
           backdropFilter: 'blur(10px)',
           border: '2px solid rgba(255, 255, 255, 0.4)',
           color: 'var(--text-inverse)',
-          zIndex: isPokedexOpen ? 10 : 50, // Normal z-index when pokedex is open (close button is inside modal)
+          zIndex: isPokedexOpen ? 10 : 50,
         }}
         aria-label={isPokedexOpen ? 'Close Pokedex' : 'Open Pokedex'}
       >

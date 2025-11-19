@@ -364,12 +364,15 @@ const Game: React.FC = () => {
         c.restore();
       }
 
-      // Continue the animation - check only keysRef (same as keyboard)
+      // Continue the animation if keys are pressed OR player recently moved (mobile support)
       const hasKeyPressed = keysRef.current.w.pressed || keysRef.current.a.pressed ||
         keysRef.current.s.pressed || keysRef.current.d.pressed ||
         keysRef.current.ArrowUp.pressed || keysRef.current.ArrowDown.pressed ||
         keysRef.current.ArrowLeft.pressed || keysRef.current.ArrowRight.pressed;
-      if (hasKeyPressed) {
+      
+      const hasRecentMovement = playerRef.current && playerRef.current.recentMovementFrames > 0;
+      
+      if (hasKeyPressed || hasRecentMovement) {
         animationIdRef.current = requestAnimationFrame(animate);
       } else {
         if (animationIdRef.current) {
@@ -757,6 +760,19 @@ const Game: React.FC = () => {
     };
     window.addEventListener('closePokedex', handleClosePokedex as EventListener);
 
+    // Listener for battle start event (from Sprite.ts)
+    const handleBattleStarted = () => {
+      if (playerRef.current?.inBattle) {
+        setInBattle(true);
+        // Save the initial position when entering battle
+        setInitialPlayerPosition({
+          x: playerRef.current.position.x,
+          y: playerRef.current.position.y,
+        });
+      }
+    };
+    window.addEventListener('battleStarted', handleBattleStarted);
+
     return () => {
       window.removeEventListener('keydown', handleKeyEscape);
       window.removeEventListener('keypress', handleKeyEnter);
@@ -764,6 +780,7 @@ const Game: React.FC = () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('resize', updateCanvasSize);
       window.removeEventListener('closePokedex', handleClosePokedex as EventListener);
+      window.removeEventListener('battleStarted', handleBattleStarted); // Cleanup battle listener
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current);
       }
@@ -1113,6 +1130,7 @@ const Game: React.FC = () => {
                 pointerEvents: 'none',
               }}
             >
+
               Press <span className="font-bold" style={{ color: 'var(--primary)' }}>Enter</span> to open the Pokédex
             </div>
           )}

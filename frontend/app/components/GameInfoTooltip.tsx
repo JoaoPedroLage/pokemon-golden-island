@@ -205,6 +205,26 @@ const GameInfoTooltip: React.FC<GameInfoTooltipProps> = ({ isOpen: externalIsOpe
               paddingRight: isMobile ? '0.75rem' : 'calc(1.5rem + 0.75rem)',
             }}
           >
+            {/* Scrollable content area */}
+            <div
+              className="flex-1 overflow-y-auto"
+              style={{
+                padding: isMobile ? '0.75rem' : '1rem',
+                overflowX: 'hidden',
+                overflowY: 'auto',
+                WebkitOverflowScrolling: 'touch', // Smooth scrolling on iOS
+                touchAction: 'pan-y', // Allow vertical scrolling
+                overscrollBehavior: 'contain', // Prevent scroll chaining
+                scrollBehavior: 'smooth',
+                minHeight: 0, // Important for flex container
+              }}
+              // Prevent parent from capturing touch events
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchMove={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => e.stopPropagation()}
+            >
+              {/* Tooltip content here */}
+            </div>
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
