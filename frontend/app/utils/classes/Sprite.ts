@@ -16,6 +16,7 @@ export class Sprite {
   frameInterval: number; // Time between each frame
   lastFrameTime: number; // Stores the time of the last frame update
   inBattle: boolean;
+  recentMovementFrames: number; // Track frames since last movement for mobile support
 
   constructor({ position, image, frames = { max: 3 }, sprites, size = 50 }: SpriteProps) {
     this.position = position;
@@ -29,6 +30,7 @@ export class Sprite {
     this.frameInterval = 150; // Time interval between frames (milliseconds) - increased for better mobile performance
     this.lastFrameTime = 0; // Time of last frame update
     this.inBattle = false; // Initialize outside battle zone
+    this.recentMovementFrames = 0; // Initialize recent movement counter
   }
 
   getSpriteFrame() {
@@ -147,18 +149,27 @@ export class Sprite {
       this.position.y -= movementSpeed; // Move player up
       isMoving = true;
       this.image = this.sprites!.up;
+      this.recentMovementFrames = 30; // Set to 30 frames (~500ms at 60fps) for mobile support
     } else if (directionToMove === 'down') {
       this.position.y += movementSpeed; // Move player down
       isMoving = true;
       this.image = this.sprites!.down;
+      this.recentMovementFrames = 30;
     } else if (directionToMove === 'left') {
       this.position.x -= movementSpeed; // Move player left
       isMoving = true;
       this.image = this.sprites!.left;
+      this.recentMovementFrames = 30;
     } else if (directionToMove === 'right') {
       this.position.x += movementSpeed; // Move player right
       isMoving = true;
       this.image = this.sprites!.right;
+      this.recentMovementFrames = 30;
+    }
+
+    // Decrement recent movement counter
+    if (this.recentMovementFrames > 0) {
+      this.recentMovementFrames--;
     }
 
     // Calculate scaled dimensions for collision detection (same as in draw method)
@@ -194,13 +205,21 @@ export class Sprite {
       BattleZone.checkBattleZone(playerRect as BattleZone, zone)
     );
 
-    // If in battle zone, roll a chance to start battle
-    if (currentBattleZone && isMoving) {
+    // Check battle zone if CURRENTLY moving OR recently moved (within last 30 frames)
+    // This ensures mobile touches have same chance as keyboard
+    if (currentBattleZone && (isMoving || this.recentMovementFrames > 0)) {
       const chanceToStartBattle = Math.floor(Math.random() * 101);
       if (chanceToStartBattle > 99) { // 2% chance to start battle
         BattleZone.startBattle(() => {
           this.inBattle = true; // Update player state to in battle
+          
+          // Immediately notify via event that battle started
+          // This allows the game component to react without waiting for next frame
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('battleStarted'));
+          }
         }, currentBattleZone.zoneType);
+        this.recentMovementFrames = 0; // Reset counter when battle starts
       }
     }
 
