@@ -163,11 +163,19 @@ const Pokedex: React.FC = () => {
             padding: isMobile ? '0.75rem' : '1.5rem',
             overflowX: 'hidden',
             overflowY: 'auto',
-            WebkitOverflowScrolling: 'touch',
+            WebkitOverflowScrolling: 'touch', // Smooth scrolling on iOS
             boxSizing: 'border-box',
-            touchAction: 'pan-y', // Allow vertical scrolling with touch gestures
+            touchAction: 'pan-y', // Allow vertical scrolling
             overscrollBehavior: 'contain', // Prevent scroll chaining
+            // Add momentum scrolling for better mobile experience
+            scrollBehavior: 'smooth',
+            // Ensure the content is scrollable by setting a minimum height
+            minHeight: 0,
           }}
+          // Prevent parent from capturing touch events
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
         >
           {capturedPokemons.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full">
@@ -226,30 +234,31 @@ const Pokedex: React.FC = () => {
                     key={pokemon.name}
                     className="pokedex-item rounded-lg shadow-md flex flex-col items-center transition-transform hover:scale-105"
                     style={{
-                      padding: isMobile ? '0.25rem' : '1rem',
+                      padding: isMobile ? '0.5rem' : '1rem',
+                      minHeight: isMobile ? '160px' : '220px', // Increased from 120px to 160px for mobile
                       backgroundColor: 'var(--bg-secondary)',
                       border: '1px solid var(--border-light)'
                     }}
                   >
-                    <div className="relative w-full flex justify-center" style={{ marginBottom: isMobile ? '0.25rem' : '0.75rem' }}>
+                    <div className="relative w-full flex justify-center" style={{ marginBottom: isMobile ? '0.5rem' : '0.75rem' }}>
                       <Image
                         src={pokemon.sprite}
                         alt={pokemon.name}
-                        width={isMobile ? 40 : 120}
-                        height={isMobile ? 40 : 120}
+                        width={isMobile ? 70 : 120} // Increased from 60 to 70 for mobile
+                        height={isMobile ? 70 : 120}
                         className="object-contain"
                         style={{
-                          maxWidth: isMobile ? '40px' : '120px',
-                          maxHeight: isMobile ? '40px' : '120px',
+                          maxWidth: isMobile ? '70px' : '120px',
+                          maxHeight: isMobile ? '70px' : '120px',
                         }}
                       />
                       {pokemon.quantity > 1 && (
                         <div
                           className="absolute -top-0.5 -right-0.5 rounded-full flex items-center justify-center font-bold"
                           style={{
-                            width: isMobile ? '0.875rem' : '1.75rem',
-                            height: isMobile ? '0.875rem' : '1.75rem',
-                            fontSize: isMobile ? '0.45rem' : '0.875rem',
+                            width: isMobile ? '1.25rem' : '1.75rem', // Increased from 1rem to 1.25rem for mobile
+                            height: isMobile ? '1.25rem' : '1.75rem',
+                            fontSize: isMobile ? '0.625rem' : '0.875rem', // Increased from 0.5rem
                             backgroundColor: 'var(--primary)',
                             color: 'var(--text-inverse)'
                           }}
@@ -263,9 +272,9 @@ const Pokedex: React.FC = () => {
                       className="font-semibold text-center capitalize"
                       style={{ 
                         color: 'var(--text-primary)',
-                        fontSize: isMobile ? '0.5rem' : '1.125rem',
-                        lineHeight: isMobile ? '1.1' : '1.5',
-                        marginBottom: isMobile ? '0.125rem' : '0.5rem'
+                        fontSize: isMobile ? '0.75rem' : '1.125rem', // Increased from 0.65rem to 0.75rem for mobile
+                        lineHeight: isMobile ? '1.2' : '1.5',
+                        marginBottom: isMobile ? '0.25rem' : '0.5rem'
                       }}
                     >
                       {pokemon.name}
@@ -274,12 +283,12 @@ const Pokedex: React.FC = () => {
                     <p
                       className="text-center rounded"
                       style={{
-                        fontSize: isMobile ? '0.4rem' : '0.875rem',
+                        fontSize: isMobile ? '0.625rem' : '0.875rem', // Increased from 0.5rem to 0.625rem for mobile
                         color: 'var(--text-secondary)',
                         backgroundColor: 'var(--bg-primary)',
-                        lineHeight: isMobile ? '1.1' : '1.5',
-                        padding: isMobile ? '0.125rem 0.25rem' : '0.25rem 0.5rem',
-                        marginBottom: isMobile ? '0.25rem' : '0.75rem'
+                        lineHeight: isMobile ? '1.2' : '1.5',
+                        padding: isMobile ? '0.25rem 0.5rem' : '0.25rem 0.5rem',
+                        marginBottom: isMobile ? '0.5rem' : '0.75rem'
                       }}
                     >
                       {pokemon.type}
@@ -288,8 +297,8 @@ const Pokedex: React.FC = () => {
                     <button
                       className="mt-auto rounded font-medium transition-all hover:opacity-90 w-full"
                       style={{
-                        padding: isMobile ? '0.125rem 0.25rem' : '0.5rem 1rem',
-                        fontSize: isMobile ? '0.4rem' : '1rem',
+                        padding: isMobile ? '0.375rem 0.5rem' : '0.5rem 1rem', // Increased from 0.25rem to 0.375rem for mobile
+                        fontSize: isMobile ? '0.625rem' : '1rem', // Increased from 0.5rem to 0.625rem for mobile
                         backgroundColor: 'var(--danger)',
                         color: 'var(--text-inverse)',
                         border: '1px solid var(--border-medium)'
