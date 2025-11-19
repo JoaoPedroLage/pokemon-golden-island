@@ -3,7 +3,7 @@
 'use client';
 
 import ImageNext from 'next/image';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { BattleSceneProps, Pokemon } from '../interfaces/mainInterface';
 import { useGameContext } from '../context/GameContext';
 
@@ -23,63 +23,26 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 }); // For dynamic viewport dimensions
 
   const imageRefs = useRef<{ [key: string]: HTMLImageElement }>({});
+  
+  // Add refs for buttons
+  const ballButtonRef = useRef<HTMLButtonElement>(null);
+  const berryButtonRef = useRef<HTMLButtonElement>(null);
+  const runButtonRef = useRef<HTMLButtonElement>(null);
 
   const {
     pokeballs,
     berries,
     setTotalPokemons,
     resetGame,
-    usePokeball,
+    decrementPokeball, // Renamed from usePokeball
     addCapturedPokemon,
     addBerry,
     addPokeballs,
-    useBerry
+    decrementBerry // Renamed from useBerry
   } = useGameContext();
 
-  const getPokemonDifficult = (berry = 0) => {
-    if (!pokemon) return 0;
-
-    // List of legendary and mythical Pokemon from the 1st generation
-    const legendaryPokemon = ['mewtwo', 'mew', 'articuno', 'zapdos', 'moltres'];
-    const mythicalPokemon = ['mew'];
-    
-    // Rare types that make the Pokemon harder to catch
-    const rareTypes = ['dragon', 'ghost', 'psychic'];
-    
-    // Convert type to array if it's a string (can come as "fire, flying" or ["fire", "flying"])
-    const pokemonTypes = Array.isArray(pokemon.type) 
-      ? pokemon.type 
-      : typeof pokemon.type === 'string' 
-        ? pokemon.type.split(',').map(t => t.trim().toLowerCase())
-        : [];
-    
-    // Check if it's a legendary or mythical Pokemon by name
-    const isLegendary = legendaryPokemon.includes(pokemon.name.toLowerCase());
-    const isMythical = mythicalPokemon.includes(pokemon.name.toLowerCase());
-    
-    // Check if it has rare types
-    const hasRareType = rareTypes.some((rareType) => 
-      pokemonTypes.some((type: string) => type.toLowerCase() === rareType)
-    );
-
-    // Calculate difficulty based on rarity
-    if (isLegendary || pokemon.name.toLowerCase() === 'mewtwo') {
-      // Legendary Pokemon: 95% difficulty (5% catch chance without berry)
-      return Math.max(0.95 - berry, 0.05);
-    } else if (isMythical) {
-      // Mythical Pokemon: 90% difficulty (10% catch chance without berry)
-      return Math.max(0.90 - berry, 0.10);
-    } else if (hasRareType) {
-      // Rare types: 85% difficulty (15% catch chance without berry)
-      return Math.max(0.85 - berry, 0.15);
-    } else {
-      // Common Pokemon: 70% difficulty (30% catch chance without berry)
-      return Math.max(0.70 - berry, 0.30);
-    }
-  };
-
   // Handler for berry button (works with both mouse and touch)
-  const HandleBerryClick = (e?: React.MouseEvent | React.TouchEvent) => {
+  const HandleBerryClick = useCallback((e?: React.MouseEvent | React.TouchEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -88,8 +51,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
     if (berries <= 0 || catchStatus === 'catch' || isThrowing) return; // Don't allow using berry if conditions not met
     
     setGivingBerry(true);
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useBerry(); // Decrements the number of Berries (not a React hook, it's a context function)
+    decrementBerry(); // Renamed from useBerry
 
     // Each berry gives a bonus of 0.05 to 0.15 (5% to 15%) and accumulates up to a maximum of 0.5 (50%)
     const berryBonus = Math.random() * 0.1 + 0.05; // Bonus of 5% to 15% per berry
@@ -101,10 +63,10 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
     setTimeout(() => {
       setGivingBerry(false);
     }, 2000);
-  };
+  }, [berries, catchStatus, isThrowing, bonusCatchChance, decrementBerry]);
 
   // Handler for end battle button (works with both mouse and touch)
-  const HandleEndBattle = (e?: React.MouseEvent | React.TouchEvent) => {
+  const HandleEndBattle = useCallback((e?: React.MouseEvent | React.TouchEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -112,27 +74,69 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
     
     if (pokeballs === 0) resetGame();
     endBattle();
-  };
+  }, [pokeballs, resetGame, endBattle]);
 
   // Handler for pokeball button (works with both mouse and touch)
-  const HandleBallClick = (e?: React.MouseEvent | React.TouchEvent) => {
+  const HandleBallClick = useCallback((e?: React.MouseEvent | React.TouchEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
 
-    // Check conditions before proceeding
-    if (pokeballs <= 0 || catchStatus === 'catch' || isThrowing) {
+    // Use refs or check state INSIDE setTimeout to get fresh values
+    // The problem is that pokeballs value in closure is stale
+    // Solution: Check conditions using a function that will be called when button is clicked
+    
+    // Move getPokemonDifficult inside useCallback to avoid dependency issues
+    const getPokemonDifficult = (berry = 0) => {
+      if (!pokemon) return 0;
+
+      const legendaryPokemon = ['mewtwo', 'mew', 'articuno', 'zapdos', 'moltres'];
+      const mythicalPokemon = ['mew'];
+      const rareTypes = ['dragon', 'ghost', 'psychic'];
+      
+      const pokemonTypes = Array.isArray(pokemon.type) 
+        ? pokemon.type 
+        : typeof pokemon.type === 'string' 
+          ? pokemon.type.split(',').map(t => t.trim().toLowerCase())
+          : [];
+      
+      const isLegendary = legendaryPokemon.includes(pokemon.name.toLowerCase());
+      const isMythical = mythicalPokemon.includes(pokemon.name.toLowerCase());
+      const hasRareType = rareTypes.some((rareType) => 
+        pokemonTypes.some((type: string) => type.toLowerCase() === rareType)
+      );
+
+      if (isLegendary || pokemon.name.toLowerCase() === 'mewtwo') {
+        return Math.max(0.95 - berry, 0.05);
+      } else if (isMythical) {
+        return Math.max(0.90 - berry, 0.10);
+      } else if (hasRareType) {
+        return Math.max(0.85 - berry, 0.15);
+      } else {
+        return Math.max(0.70 - berry, 0.30);
+      }
+    };
+
+    // Check conditions - these will use current state at the time of click
+    if (catchStatus === 'catch' || isThrowing) {
       return;
     }
 
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    usePokeball(); // Decrements the number of Pokeballs (not a React hook, it's a context function)
+    // Call decrementPokeball which will decrement and we'll check inside
+    // Store pokeballs BEFORE decrementing
+    const currentPokeballs = pokeballs;
+    
+    // Check if we have pokeballs
+    if (currentPokeballs <= 0) {
+      console.log('No pokeballs left!');
+      return;
+    }
+
+    decrementPokeball(); // Renamed from usePokeball
     setIsThrowing(true);
     setCatchStatus(null);
-    setShowPokemon(false); // Hides the Pokemon during Pokeball throw
-
-    const pokeballsBeforeThrow = pokeballs;
+    setShowPokemon(false);
 
     setTimeout(() => {
       const catchChance = Math.random();
@@ -144,24 +148,22 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
       if (success) {
         setCatchStatus('catch');
         if (pokemon)
-          addCapturedPokemon(pokemon); // Adds the captured Pokemon to the context
+          addCapturedPokemon(pokemon);
 
-        // Random chance to win Berries
         const berryChance = Math.random();
-        if (berryChance < 0.3) { // 30% chance to win a Berry
+        if (berryChance < 0.3) {
           setCurrentBerryReward(1);
           addBerry();
         }
 
-        // Random chance to win 1 to 3 Pokeballs
-        const lowPokeballs = (pokeballsBeforeThrow ?? 0) <= 5;
+        const lowPokeballs = currentPokeballs <= 5;
         const pokeballReward = Math.random();
         const rewardChanceThreshold = lowPokeballs ? Math.min(0.35 * 2, 1) : 0.5;
 
         if (pokeballReward < rewardChanceThreshold) {
           const rewardAmount = lowPokeballs
-            ? Math.floor(Math.random() * 7) + 4 // 4 to 10
-            : Math.floor(Math.random() * 8) + 2; // 2 to 10
+            ? Math.floor(Math.random() * 7) + 4
+            : Math.floor(Math.random() * 8) + 2;
           setCurrentPokeballReward(rewardAmount);
           addPokeballs(rewardAmount);
         }
@@ -169,11 +171,11 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
         setCatchStatus('escape');
         setTimeout(() => {
           setCatchStatus('none');
-          setShowPokemon(true); // Show Pokemon again after escape
+          setShowPokemon(true);
         }, 1000);
       }
     }, 2000);
-  };
+  }, [pokeballs, catchStatus, isThrowing, pokemon, bonusCatchChance, decrementPokeball, addCapturedPokemon, addBerry, addPokeballs]);
 
   // Handle hydration and detect mobile device with multiple checks
   useEffect(() => {
@@ -435,11 +437,69 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
     // Adiciona o event listener para tecla enter
     window.addEventListener('keypress', handleKeyEnter);
 
+    // Setup button event listeners with { passive: false }
+    if (typeof window !== 'undefined' && isMounted) {
+      const ballButton = ballButtonRef.current;
+      const berryButton = berryButtonRef.current;
+      const runButton = runButtonRef.current;
+
+      const handleBallTouch = (e: TouchEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Don't check pokeballs here - let HandleBallClick do all validation
+        // This avoids stale closure issues
+        if (catchStatus !== 'catch' && !isThrowing) {
+          HandleBallClick();
+        }
+      };
+
+      const handleBerryTouch = (e: TouchEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Don't check berries here - let HandleBerryClick do all validation
+        if (catchStatus !== 'catch' && !isThrowing) {
+          HandleBerryClick();
+        }
+      };
+
+      const handleRunTouch = (e: TouchEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        HandleEndBattle();
+      };
+
+      // Add touch listeners with { passive: false }
+      if (ballButton) {
+        ballButton.addEventListener('touchstart', handleBallTouch, { passive: false });
+      }
+      if (berryButton) {
+        berryButton.addEventListener('touchstart', handleBerryTouch, { passive: false });
+      }
+      if (runButton) {
+        runButton.addEventListener('touchstart', handleRunTouch, { passive: false });
+      }
+
+      // Cleanup
+      return () => {
+        if (ballButton) {
+          ballButton.removeEventListener('touchstart', handleBallTouch);
+        }
+        if (berryButton) {
+          berryButton.removeEventListener('touchstart', handleBerryTouch);
+        }
+        if (runButton) {
+          runButton.removeEventListener('touchstart', handleRunTouch);
+        }
+      };
+    }
+
     return () => {
       window.removeEventListener('keydown', handleKeyEscape);
       window.removeEventListener('keypress', handleKeyEnter);
     };
-  }, [pokemon?.sprite, childPokedex, showPokedex]);
+  }, [pokemon?.sprite, childPokedex, showPokedex, isMounted, catchStatus, pokeballs, berries, isThrowing, HandleBallClick, HandleBerryClick, HandleEndBattle]);
 
   // Don't render until mounted (hydration safety)
   if (!isMounted) {
@@ -687,6 +747,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
               }}
             >
               <button
+                ref={ballButtonRef}
                 className="rounded-lg border-2 transition-colors touch-manipulation"
                 style={{
                   width: isMobile ? '100px' : '140px',
@@ -705,17 +766,6 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
                   touchAction: 'manipulation',
                 }}
                 onClick={HandleBallClick}
-                onTouchStart={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (!catchStatus && pokeballs > 0 && !isThrowing) {
-                    HandleBallClick(e);
-                  }
-                }}
-                onTouchEnd={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
                 disabled={catchStatus === 'catch' || pokeballs === 0 || isThrowing}
               >
                 BALL
@@ -735,6 +785,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
                 }}
               >
                 <button
+                  ref={berryButtonRef}
                   className="rounded-lg border-2 transition-colors touch-manipulation"
                   style={{
                     width: isMobile ? '65px' : '80px',
@@ -753,17 +804,6 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
                     touchAction: 'manipulation',
                   }}
                   onClick={HandleBerryClick}
-                  onTouchStart={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (!catchStatus && berries > 0 && !isThrowing) {
-                      HandleBerryClick(e);
-                    }
-                  }}
-                  onTouchEnd={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }}
                   disabled={catchStatus === 'catch' || berries === 0 || isThrowing}
                 >
                   BERRY
@@ -775,6 +815,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
                 }}
               >
                 <button
+                  ref={runButtonRef}
                   className="rounded-lg border-2 transition-colors touch-manipulation"
                   style={{
                     width: isMobile ? '65px' : '80px',
@@ -791,15 +832,6 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
                     touchAction: 'manipulation',
                   }}
                   onClick={HandleEndBattle}
-                  onTouchStart={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    HandleEndBattle(e);
-                  }}
-                  onTouchEnd={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }}
                 >
                   RUN
                 </button>

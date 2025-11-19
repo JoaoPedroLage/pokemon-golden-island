@@ -19,8 +19,8 @@ interface GameContextProps {
   setShowPokedex: (show: boolean) => void;
   setTotalPokemons: (total: number) => void;
   releasePokemon: (name: string) => void;
-  usePokeball: () => void;
-  useBerry: () => void;
+  decrementPokeball: () => void; // Renamed from usePokeball
+  decrementBerry: () => void; // Renamed from useBerry
   addCapturedPokemon: (pokemon: Pokemon) => void; // Changed to receive a Pokemon object
   resetGame: () => void;
   addPokeballs: (amount: number) => void; // Function to add Pokeballs
@@ -46,8 +46,8 @@ const initialGameState: GameContextProps = {
   isSaving: false,
   setShowPokedex: () => { },
   setTotalPokemons: () => { },
-  usePokeball: () => { },
-  useBerry: () => { },
+  decrementPokeball: () => { }, // Renamed from usePokeball
+  decrementBerry: () => { }, // Renamed from useBerry
   addCapturedPokemon: async () => { },
   resetGame: () => { },
   addPokeballs: () => { },
@@ -252,20 +252,18 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
 
-  // Function to use a Pokeball
-  const usePokeball = () => {
+  // Function to decrement a Pokeball (renamed from usePokeball)
+  const decrementPokeball = () => {
     setPokeballs((prev) => {
       const newValue = prev > 0 ? prev - 1 : 0;
-      // TODO: Update in backend when there's an endpoint to update pokeballs
       return newValue;
     });
   };
 
-  // Function to use a Berry
-  const useBerry = () => {
+  // Function to decrement a Berry (renamed from useBerry)
+  const decrementBerry = () => {
     setBerries((prev) => {
       const newValue = prev > 0 ? prev - 1 : 0;
-      // TODO: Update in backend when there's an endpoint to update berries
       return newValue;
     });
   };
@@ -502,8 +500,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isSaving,
         setShowPokedex,
         setTotalPokemons,
-        usePokeball,
-        useBerry,
+        decrementPokeball, // Renamed from usePokeball
+        decrementBerry, // Renamed from useBerry
         addCapturedPokemon,
         resetGame,
         addPokeballs,
