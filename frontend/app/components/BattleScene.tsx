@@ -600,19 +600,19 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
             className="absolute"
             style={{
               // Similar layout for both mobile and desktop: Pokemon on top right
-              top: isMobile ? '1rem' : '1rem',
-              right: isMobile ? '1rem' : '1rem',
+              top: isMobile ? '0.5rem' : '1rem',
+              right: isMobile ? '0.5rem' : '1rem',
               left: isMobile ? 'auto' : 'auto',
               width: isMobile ? 'auto' : 'auto',
-              maxWidth: isMobile ? '40%' : '40%',
+              maxWidth: isMobile ? '35%' : '40%', // Reduced from 40% to 35% on mobile
             }}
           >
             <div 
               className="flex flex-col items-center justify-center rounded-full"
               style={{ 
                 backgroundColor: 'var(--bg-primary)',
-                padding: isMobile ? '0.375rem' : '0.75rem',
-                marginBottom: isMobile ? '0.375rem' : '0.75rem',
+                padding: isMobile ? '0.25rem' : '0.75rem',
+                marginBottom: isMobile ? '0.25rem' : '0.75rem',
                 width: '100%',
               }}
             >
@@ -620,7 +620,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
                 className="mb-1"
                 style={{ 
                   color: 'var(--text-primary)',
-                  fontSize: isMobile ? '0.75rem' : '1.25rem',
+                  fontSize: isMobile ? '0.65rem' : '1.25rem',
                   textAlign: 'center',
                   lineHeight: '1.2',
                 }}
@@ -631,7 +631,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
                 <h2 
                   style={{ 
                     color: 'var(--text-secondary)',
-                    fontSize: isMobile ? '0.5rem' : '0.875rem'
+                    fontSize: isMobile ? '0.45rem' : '0.875rem'
                   }}
                 >
                   HP
@@ -640,9 +640,9 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
                   className="flex items-center justify-center rounded-full relative"
                   style={{ 
                     backgroundColor: 'var(--bg-tertiary)',
-                    width: isMobile ? '60px' : '120px',
-                    height: isMobile ? '10px' : '16px',
-                    minWidth: isMobile ? '60px' : '120px',
+                    width: isMobile ? '50px' : '120px',
+                    height: isMobile ? '8px' : '16px',
+                    minWidth: isMobile ? '50px' : '120px',
                   }}
                 >
                   <div className="bg-green-500 w-[98%] h-[80%] rounded-full" />
@@ -652,14 +652,14 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
             <ImageNext
               src={pokemon.sprite}
               alt={pokemon.name}
-              width={isMobile ? 180 : 280}
-              height={isMobile ? 180 : 280}
+              width={isMobile ? 150 : 280}
+              height={isMobile ? 150 : 280}
               unoptimized
               priority
               style={{
-                width: isMobile ? '180px' : '280px',
-                height: isMobile ? '180px' : '280px',
-                maxWidth: isMobile ? '180px' : '280px',
+                width: isMobile ? '150px' : '280px',
+                height: isMobile ? '150px' : '280px',
+                maxWidth: isMobile ? '150px' : '280px',
                 objectFit: 'contain',
               }}
             />
@@ -670,8 +670,8 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
           className="absolute"
           style={{
             // Player on bottom left
-            bottom: isMobile ? '1rem' : '1rem',
-            left: isMobile ? '1rem' : '1rem',
+            bottom: isMobile ? '0.5rem' : '1rem',
+            left: isMobile ? '0.5rem' : '1rem',
             right: isMobile ? 'auto' : 'auto',
             width: isMobile ? 'auto' : 'auto',
           }}
@@ -679,13 +679,13 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
           <ImageNext
             src={imageRefs.current['playerBackSprite']?.src}
             alt={'Player'}
-            width={isMobile ? 150 : 250}
-            height={isMobile ? 150 : 250}
+            width={isMobile ? 130 : 250}
+            height={isMobile ? 130 : 250}
             unoptimized
             style={{
-              width: isMobile ? '150px' : '250px',
-              height: isMobile ? '150px' : '250px',
-              maxWidth: isMobile ? '150px' : '250px',
+              width: isMobile ? '130px' : '250px',
+              height: isMobile ? '130px' : '250px',
+              maxWidth: isMobile ? '130px' : '250px',
               objectFit: 'contain',
             }}
           />
@@ -694,15 +694,15 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
         <div 
           className="absolute"
           style={{
-            // Buttons on bottom right
-            bottom: isMobile ? '1rem' : '1rem',
+            // Buttons on bottom right - moved more to the right and down
+            bottom: isMobile ? '0.5rem' : '1rem',
             left: isMobile ? 'auto' : 'auto',
-            right: isMobile ? '1rem' : '1rem',
+            right: isMobile ? '0.5rem' : '1rem',
             width: isMobile ? 'auto' : 'auto',
             display: 'flex',
             flexDirection: 'column',
             alignItems: isMobile ? 'flex-end' : 'flex-end',
-            gap: isMobile ? '0.375rem' : '0.5rem',
+            gap: isMobile ? '0.25rem' : '0.5rem',
           }}
         >
           <div 
@@ -711,8 +711,8 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
               backgroundColor: 'var(--bg-primary)',
               borderColor: 'var(--border-medium)',
               color: 'var(--text-primary)',
-              fontSize: isMobile ? '0.625rem' : '1rem',
-              padding: isMobile ? '0.25rem 0.5rem' : '0.25rem 0.5rem',
+              fontSize: isMobile ? '0.55rem' : '1rem',
+              padding: isMobile ? '0.2rem 0.4rem' : '0.25rem 0.5rem',
               whiteSpace: 'nowrap',
             }}
           >
@@ -725,8 +725,8 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
               backgroundColor: 'var(--bg-primary)',
               borderColor: 'var(--border-medium)',
               color: 'var(--text-primary)',
-              fontSize: isMobile ? '0.625rem' : '1rem',
-              padding: isMobile ? '0.25rem 0.5rem' : '0.25rem 0.5rem',
+              fontSize: isMobile ? '0.55rem' : '1rem',
+              padding: isMobile ? '0.2rem 0.4rem' : '0.25rem 0.5rem',
               whiteSpace: 'nowrap',
             }}
           >
@@ -736,7 +736,7 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
           <div 
             className="flex"
             style={{
-              gap: isMobile ? '0.75rem' : '1rem',
+              gap: isMobile ? '0.5rem' : '1rem',
               flexDirection: 'row',
               alignItems: 'flex-start',
             }}
@@ -750,9 +750,9 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
                 ref={ballButtonRef}
                 className="rounded-lg border-2 transition-colors touch-manipulation"
                 style={{
-                  width: isMobile ? '100px' : '140px',
+                  width: isMobile ? '85px' : '140px',
                   height: `${ballHeight}px`,
-                  fontSize: isMobile ? '0.875rem' : '1.125rem',
+                  fontSize: isMobile ? '0.75rem' : '1.125rem',
                   backgroundColor: catchStatus === 'catch' || pokeballs === 0 || isThrowing
                     ? 'var(--gray-400)' 
                     : 'var(--success)',
@@ -788,9 +788,9 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
                   ref={berryButtonRef}
                   className="rounded-lg border-2 transition-colors touch-manipulation"
                   style={{
-                    width: isMobile ? '65px' : '80px',
+                    width: isMobile ? '55px' : '80px',
                   height: `${berryRunHeight}px`,
-                    fontSize: isMobile ? '0.625rem' : '0.875rem',
+                    fontSize: isMobile ? '0.55rem' : '0.875rem',
                     backgroundColor: catchStatus === 'catch' || berries === 0 || isThrowing
                       ? 'var(--gray-400)' 
                       : 'var(--primary)',
@@ -818,9 +818,9 @@ const BattleScreen: React.FC<BattleSceneProps> = ({ endBattle, childPokedex }) =
                   ref={runButtonRef}
                   className="rounded-lg border-2 transition-colors touch-manipulation"
                   style={{
-                    width: isMobile ? '65px' : '80px',
+                    width: isMobile ? '55px' : '80px',
                   height: `${berryRunHeight}px`,
-                    fontSize: isMobile ? '0.625rem' : '0.875rem',
+                    fontSize: isMobile ? '0.55rem' : '0.875rem',
                     backgroundColor: 'var(--danger)',
                     borderColor: 'var(--border-medium)',
                     color: 'var(--text-inverse)',
